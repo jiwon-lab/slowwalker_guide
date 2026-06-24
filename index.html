@@ -965,17 +965,27 @@ async function createRouteShareBlob(routeId) {
   ctx.fillStyle = data.color;
   ctx.fillRect(0, 0, 7, H);
 
-  // 로고
-  ctx.fillStyle = '#1A1A1A';
-  ctx.font = '700 24px "Work Sans", Arial, sans-serif';
-  ctx.letterSpacing = '5px';
-  ctx.fillText('SLOW WALKER', PAD, 58);
-  ctx.letterSpacing = '0px';
+  // 로고 이미지
   ctx.fillStyle = '#AAA';
   ctx.font = '500 22px "Work Sans", Arial, sans-serif';
   ctx.textAlign = 'right';
-  ctx.fillText('slowwalker.kr', W - PAD, 58);
+  ctx.fillText('slowwalker.kr', W - PAD, 56);
   ctx.textAlign = 'left';
+  try {
+    const logoImg = await new Promise((res, rej) => {
+      const img = new Image(); img.onload = () => res(img); img.onerror = rej;
+      img.src = 'assets/logo.png';
+    });
+    const lh = 38;
+    const lw = (logoImg.naturalWidth / logoImg.naturalHeight) * lh;
+    ctx.drawImage(logoImg, PAD, 18, lw, lh);
+  } catch(e) {
+    ctx.fillStyle = '#1A1A1A';
+    ctx.font = '700 24px "Work Sans", Arial, sans-serif';
+    ctx.letterSpacing = '5px';
+    ctx.fillText('SLOW WALKER', PAD, 56);
+    ctx.letterSpacing = '0px';
+  }
 
   // 로고 아래 구분선
   ctx.strokeStyle = 'rgba(26,26,26,0.13)';
@@ -984,25 +994,25 @@ async function createRouteShareBlob(routeId) {
 
   // 도시 레이블
   ctx.fillStyle = data.color;
-  ctx.font = '700 24px "Work Sans", Arial, sans-serif';
+  ctx.font = '700 40px "Work Sans", Arial, sans-serif';
   ctx.letterSpacing = '3px';
-  ctx.fillText(data.cityLabel.toUpperCase(), PAD, 120);
+  ctx.fillText(data.cityLabel.toUpperCase(), PAD, 132);
   ctx.letterSpacing = '0px';
 
   // 영문 타이틀
   ctx.fillStyle = '#1A1A1A';
   ctx.font = '700 82px "Work Sans", Arial, sans-serif';
   ctx.letterSpacing = '-2px';
-  const titleEndY = wrapCanvasText(ctx, data.title, PAD, 212, W - PAD * 2, 84, 2);
+  const titleEndY = wrapCanvasText(ctx, data.title, PAD, 222, W - PAD * 2, 84, 2);
   ctx.letterSpacing = '0px';
 
   // 한국어 타이틀
   ctx.fillStyle = '#666';
   ctx.font = '500 48px "Noto Sans KR", Arial, sans-serif';
-  ctx.fillText(data.titleKr, PAD, titleEndY + 10);
+  ctx.fillText(data.titleKr, PAD, titleEndY + 5);
 
   // 구분선
-  const divY = titleEndY + 72;
+  const divY = titleEndY + 66;
   ctx.strokeStyle = 'rgba(26,26,26,0.13)';
   ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(PAD, divY); ctx.lineTo(W - PAD, divY); ctx.stroke();
@@ -1028,13 +1038,13 @@ async function createRouteShareBlob(routeId) {
 
     // EN
     ctx.fillStyle = '#1A1A1A';
-    ctx.font = '600 38px "Work Sans", Arial, sans-serif';
+    ctx.font = '600 50px "Work Sans", Arial, sans-serif';
     ctx.fillText(spot.name, PAD + r * 2 + 16, sy);
 
     // KR (바로 아래)
     ctx.fillStyle = '#888';
-    ctx.font = '400 30px "Noto Sans KR", Arial, sans-serif';
-    ctx.fillText(spot.nameKr, PAD + r * 2 + 16, sy + 36);
+    ctx.font = '400 45px "Noto Sans KR", Arial, sans-serif';
+    ctx.fillText(spot.nameKr, PAD + r * 2 + 16, sy + 52);
   });
 
   return new Promise(resolve => canvas.toBlob(blob => resolve(blob), 'image/png', 0.95));
@@ -1164,7 +1174,9 @@ async function submitGuide() {
 
 // ── 토스트 ──
 function showToast(msg) {
-  const t = document.getElementById('toast');
+  const
+  
+  t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2500);
 }
