@@ -1,0 +1,243 @@
+:root {
+  --paper: #f6f3ef;
+  --canvas: #e9e5df;
+  --ink: #171717;
+  --muted: #9d9d9d;
+  --accent: #5e3a8c;
+  --accent-soft: #e4dcf5;
+  font-family: "Work Sans", "Noto Sans KR", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body { min-height: 100%; }
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--canvas);
+}
+
+button { font: inherit; }
+
+.app {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(320px, 390px) minmax(240px, 340px);
+  place-content: center;
+  gap: clamp(28px, 6vw, 84px);
+  padding: 32px;
+}
+
+.phone {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 390 / 650;
+  overflow: hidden;
+  border-radius: 24px;
+  background: var(--paper);
+  box-shadow: 0 28px 90px rgb(25 20 15 / 18%);
+}
+
+.topbar {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 10;
+  height: 58px;
+  padding: 0 14px;
+  display: grid;
+  grid-template-columns: 42px 1fr 42px;
+  align-items: center;
+  background: linear-gradient(var(--paper) 64%, transparent);
+}
+
+.topbar__logo {
+  justify-self: center;
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+
+.icon-button {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.counter {
+  justify-self: end;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  color: #777;
+}
+
+.guide-card {
+  min-height: 100%;
+  padding: 76px 28px 30px;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(circle at 15% 20%, rgb(255 255 255 / 70%) 0 2px, transparent 3px),
+    repeating-linear-gradient(11deg, rgb(60 50 40 / 1.5%) 0 1px, transparent 1px 5px);
+}
+
+.cover__stamp {
+  width: 102px;
+  height: 102px;
+  margin-bottom: 38px;
+  background: var(--accent);
+  -webkit-mask: url("assets/logo.png") center / contain no-repeat;
+  mask: url("assets/logo.png") center / contain no-repeat;
+}
+
+.location {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  color: var(--accent);
+  font-size: clamp(18px, 5.8vw, 25px);
+  font-weight: 500;
+  letter-spacing: .025em;
+}
+
+.location::before {
+  content: "";
+  width: 29px;
+  height: 4px;
+  flex: 0 0 auto;
+  background: currentColor;
+}
+
+.cover h2,
+.spot h2 {
+  margin: 0;
+  font-size: clamp(41px, 12vw, 58px);
+  font-weight: 500;
+  line-height: .98;
+  letter-spacing: -.055em;
+}
+
+.cover__ko,
+.spot__ko {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-family: "Noto Sans KR", sans-serif;
+  font-size: clamp(20px, 6vw, 27px);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -.04em;
+}
+
+.guide-strip {
+  margin-top: 42px;
+  padding: 15px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 8px;
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.guide-strip small,
+.guide-strip strong { display: block; }
+.guide-strip small { font-size: 14px; font-weight: 500; letter-spacing: .04em; }
+.guide-strip strong { margin-top: 5px; font-size: 21px; font-weight: 500; }
+.guide-strip__spots { white-space: nowrap; font-size: 18px; letter-spacing: .08em; }
+
+.tags {
+  margin: auto 0 0;
+  color: var(--muted);
+  font-size: clamp(16px, 5vw, 24px);
+  line-height: 1.25;
+  white-space: nowrap;
+  letter-spacing: -.035em;
+}
+
+.spot { padding-top: 68px; }
+
+.spot__photo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 8.5;
+  margin-bottom: 24px;
+  overflow: hidden;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 18%, #eee), #d5d0c9);
+}
+
+.spot__photo img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.spot__photo img[src=""],
+.spot__photo img:not([src]) { visibility: hidden; }
+
+.spot__photo::after {
+  content: "장소 사진 교체 영역";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: rgb(0 0 0 / 44%);
+  font-family: "Noto Sans KR", sans-serif;
+  font-size: 12px;
+  letter-spacing: .08em;
+  pointer-events: none;
+}
+
+.spot__photo:has(img[src]:not([src=""]))::after { display: none; }
+
+.spot h2 { font-size: clamp(42px, 11.5vw, 56px); }
+
+.spot__description {
+  margin-top: 18px;
+  padding-left: 13px;
+  border-left: 4px solid var(--accent);
+}
+
+.spot__description p {
+  margin: 0;
+  font-size: clamp(16px, 4.5vw, 21px);
+  line-height: 1.22;
+  letter-spacing: -.025em;
+}
+
+.spot__description p + p {
+  margin-top: 7px;
+  color: var(--muted);
+  font-family: "Noto Sans KR", sans-serif;
+  font-weight: 700;
+}
+
+.pager { position: absolute; inset: 0; pointer-events: none; }
+.pager__hit { position: absolute; top: 58px; bottom: 0; width: 18%; border: 0; background: transparent; pointer-events: auto; cursor: pointer; }
+.pager__hit--prev { left: 0; }
+.pager__hit--next { right: 0; }
+.pager__dots { position: absolute; z-index: 20; right: 14px; bottom: 13px; display: flex; gap: 5px; }
+.pager__dots button { width: 5px; height: 5px; padding: 0; border: 0; border-radius: 50%; background: #bbb; pointer-events: auto; cursor: pointer; }
+.pager__dots button[aria-current="true"] { background: var(--accent); transform: scale(1.45); }
+
+.course-picker { align-self: center; }
+.course-picker__eyebrow { margin: 0 0 8px; font-size: 10px; font-weight: 600; letter-spacing: .18em; color: #777; }
+.course-picker h1 { margin: 0; font-size: clamp(38px, 6vw, 72px); font-weight: 500; letter-spacing: -.06em; }
+.course-picker > p:not(.course-picker__eyebrow) { max-width: 28ch; color: #68635e; font-family: "Noto Sans KR", sans-serif; line-height: 1.65; }
+.course-picker__buttons { display: grid; gap: 8px; margin-top: 24px; }
+.course-picker__buttons button { padding: 11px 14px; text-align: left; border: 1px solid #cbc5be; border-radius: 10px; color: #5e5953; background: transparent; cursor: pointer; }
+.course-picker__buttons button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--paper); }
+
+@media (max-width: 760px) {
+  .app { grid-template-columns: minmax(300px, 390px); padding: 14px; }
+  .course-picker { width: 100%; order: -1; }
+  .course-picker h1, .course-picker > p:not(.course-picker__eyebrow) { display: none; }
+  .course-picker__buttons { grid-template-columns: repeat(2, 1fr); margin-top: 8px; }
+  .course-picker__buttons button { font-size: 12px; }
+}

@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T5TXSERYGR"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-T5TXSERYGR');
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slow Walker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&family=Work+Sans:wght@300;400;500;600;700&display=swap');
+  :root {
+    --bg:#EEEAE4; --card:#F6F3EF; --ink:#1A1A1A;
+    --ink-mid:#555; --ink-lt:#999; --line:#D8D4CE;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{width:100%;height:100%;background:var(--bg);font-family:'Work Sans','Noto Sans KR',sans-serif;overflow:hidden;}
+
+  .app{width:100%;height:100vh;display:flex;justify-content:center;align-items:center;}
+
+  .phone{
+    width:min(390px,100vw);
+    height:min(580px,100vh);
+    background:var(--card);
+    position:relative;overflow:hidden;
+    display:flex;flex-direction:column;
+    box-shadow:0 24px 80px rgba(0,0,0,0.2);
+    border-radius:24px;
+  }
+
+  /* 로고바 */
+  .logo-bar{
+    flex-shrink:0;height:72px;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 18px;position:relative;z-index:10;
+    background:var(--card);
+  }
+  .logo-img{width:44px;display:block;object-fit:contain;}
+  .back-btn{display:none;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--ink-mid);cursor:pointer;padding:6px 0;background:none;border:none;}
+  .back-btn.visible{display:flex;}
+
+  /* 화면 전환 */
+  .screen{position:absolute;inset:56px 0 0 0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity 0.25s;z-index:5;overflow-y:auto;}
+  .screen.active{opacity:1;pointer-events:all;}
+
+  /* 카드 공통 */
+  .sel-card{
+    background:#F2EFE9;border:1px solid var(--line);
+    padding:16px 18px;cursor:pointer;
+    transition:all 0.2s cubic-bezier(0.34,1.56,0.64,1);
+    position:relative;border-radius:14px;
+    box-shadow:0 2px 0 var(--line);
+  }
+  .sel-card:hover{background:var(--card);transform:translateY(-3px);box-shadow:0 6px 0 var(--line);}
+  .sel-card:active{transform:translateY(0);box-shadow:0 1px 0 var(--line);}
+
+  /* 슬라이드 */
+  .s-slides{padding:0;overflow:hidden;}
+  .slides-wrap{width:100%;height:100%;position:relative;overflow:hidden;}
+  .slide-track{display:flex;height:100%;transition:transform 0.4s cubic-bezier(0.4,0,0.2,1);}
+  .slide{flex-shrink:0;width:100%;height:100%;position:relative;overflow:hidden;} .slide .map-btns{position:absolute;bottom:0;left:0;right:0;z-index:30;}
+
+  /* 진행바 */
+  .progress{position:absolute;top:0;left:0;right:0;display:flex;gap:3px;padding:10px 12px 0;z-index:20;}
+  .prog-seg{flex:1;height:2px;border-radius:1px;background:rgba(255,255,255,0.35);}
+  .prog-seg.done{background:rgba(255,255,255,0.9);}
+  .prog-seg.cur{background:rgba(255,255,255,0.7);}
+
+  /* 호버 네비 */
+  .nav-prev,.nav-next{
+    position:absolute;top:50%;transform:translateY(-50%);
+    width:36px;height:60px;margin-top:-10px;
+    background:transparent;border:none;color:transparent;
+    font-size:22px;cursor:pointer;z-index:20;
+    display:flex;align-items:center;transition:all 0.2s;
+    border-radius:8px;
+  }
+  .nav-prev{left:6px;justify-content:center;}
+  .nav-next{right:6px;justify-content:center;}
+  .nav-prev:hover,.nav-next:hover{background:rgba(0,0,0,0.15);color:rgba(255,255,255,0.9);}
+  @media(hover:none){.nav-prev,.nav-next{color:transparent!important;background:transparent!important;}}
+
+  /* 도트 */
+  .slide-nav{position:absolute;bottom:12px;left:0;right:0;display:flex;justify-content:center;gap:5px;z-index:20;}
+  .sdot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,0.4);cursor:pointer;transition:all 0.25s cubic-bezier(0.34,1.56,0.64,1);}
+  .sdot.active{background:#fff;transform:scale(1.5);}
+
+  /* 투어 저장 버튼 (로고바) */
+  .save-tour-nav{display:none;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;padding:6px;}
+  .save-tour-nav.visible{display:flex;}
+
+  /* 테마 태그 */
+  .theme-tag{font-size:11px;font-weight:500;padding:5px 12px;border:1.5px solid var(--line);background:#F2EFE9;cursor:pointer;transition:all 0.18s cubic-bezier(0.34,1.56,0.64,1);color:#555;user-select:none;border-radius:20px;}
+  .theme-tag.selected{background:#1A1A1A;color:#F6F3EF;border-color:#1A1A1A;}
+  .theme-tag:hover{transform:scale(1.06);}
+
+  /* 토스트 */
+  .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--ink);color:#F6F3EF;font-size:11px;padding:9px 18px;opacity:0;transition:all 0.3s;pointer-events:none;z-index:200;white-space:nowrap;border-radius:12px;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* 액션 버튼 */
+  .spot-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;}
+  .spot-action-btn{display:flex;align-items:center;gap:5px;padding:7px 11px;font-family:'Work Sans',sans-serif;font-size:10px;font-weight:500;letter-spacing:1px;text-transform:uppercase;border:1.5px solid var(--line);background:#F2EFE9;color:#555;cursor:pointer;text-decoration:none;transition:all 0.18s cubic-bezier(0.34,1.56,0.64,1);border-radius:10px;}
+  .spot-action-btn:hover{background:#1A1A1A;color:#fff;border-color:#1A1A1A;transform:translateY(-2px);}
+
+  /* ── CSS 슬라이드: 기존 이미지 카드 대체 ── */
+  .sw-card{--course:#742583;--course-soft:#e6ddf4;width:100%;height:100%;padding:54px 28px 24px;display:flex;flex-direction:column;background-color:#F6F3EF;background-image:radial-gradient(circle at 15% 20%,rgba(255,255,255,.7) 0 2px,transparent 3px),repeating-linear-gradient(11deg,rgba(60,50,40,.015) 0 1px,transparent 1px 5px);font-family:'Work Sans','Noto Sans KR',sans-serif;color:#171717}
+  .sw-card *{box-sizing:border-box}.sw-logo-stamp{width:96px;height:96px;margin-bottom:30px;background:var(--course);-webkit-mask:url('assets/logo.png') center/contain no-repeat;mask:url('assets/logo.png') center/contain no-repeat}.sw-place{display:flex;align-items:center;gap:10px;margin-bottom:10px;color:var(--course);font-family:'Work Sans',sans-serif;font-size:22px;font-weight:500;letter-spacing:.02em}.sw-place:before{content:'';width:30px;height:4px;background:currentColor}.sw-title{margin:0;font-family:'Work Sans',sans-serif;font-size:49px;font-weight:500;line-height:.96;letter-spacing:-.055em}.sw-cover .sw-title{font-size:38px;line-height:1.02;letter-spacing:-.045em}.sw-title-ko{margin:5px 0 0;color:#9d9d9d;font-family:'Noto Sans KR',sans-serif;font-size:18px;font-weight:600;line-height:1.15;letter-spacing:-.035em}.sw-guide{margin-top:28px;padding:14px;display:grid;grid-template-columns:1fr auto;align-items:end;gap:8px;color:var(--course);background:var(--course-soft)}.sw-guide small,.sw-guide strong{display:block}.sw-guide small{font-family:'Work Sans',sans-serif;font-size:13px;font-weight:500;letter-spacing:.04em}.sw-guide strong{margin-top:4px;font-family:'Work Sans',sans-serif;font-size:20px;font-weight:500}.sw-guide-spots{font-family:'Work Sans',sans-serif;font-size:15px;letter-spacing:.07em;white-space:nowrap}.sw-tags{margin:auto 0 0;color:#9d9d9d;font-family:'Work Sans',sans-serif;font-size:20px;line-height:1.2;letter-spacing:-.035em;white-space:nowrap}
+  .sw-content{padding-top:36px}.sw-photo{width:100%;aspect-ratio:16/8.5;margin-bottom:22px;overflow:hidden;background:linear-gradient(135deg,color-mix(in srgb,var(--course) 18%,#eee),#d5d0c9);position:relative}.sw-photo img{width:100%;height:100%;display:block;object-fit:cover}.sw-photo span{position:absolute;inset:0;display:grid;place-items:center;color:rgba(0,0,0,.35);font-family:'Work Sans',sans-serif;font-size:10px;letter-spacing:.14em}.sw-photo.loaded span{display:none}.sw-title-row{display:flex;align-items:flex-start;gap:8px}.sw-title-row .sw-title{min-width:0;flex:1}.sw-content .sw-title{font-size:45px}.sw-map-buttons{margin-left:auto;padding-top:2px;display:flex;gap:5px;flex:0 0 auto}.sw-map-button{width:25px;height:25px;border-radius:50%;display:grid;place-items:center;text-decoration:none;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,.13)}.sw-map-button.google{color:#4285f4;background:#fff;border:1px solid #ddd}.sw-map-button.naver{color:#fff;background:#03c75a}.sw-copy{width:calc(100% - 58px);max-width:calc(100% - 58px);margin-top:16px;padding-left:12px;border-left:4px solid var(--course)}.sw-copy p{margin:0;font-family:'Work Sans',sans-serif;font-size:18px;font-weight:500;line-height:1.13;letter-spacing:-.025em;word-break:keep-all;overflow-wrap:normal;hyphens:none}.sw-copy .ko{margin-top:3px;color:#9d9d9d;font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:400;line-height:1.12}
+  .sw-ending{padding-top:50px;text-align:center}.sw-ending .sw-title{font-size:36px;line-height:1.04;letter-spacing:-.055em}.sw-ending .sw-title-ko{margin-top:10px;font-size:18px}.sw-actions{width:100%;margin-top:40px;display:flex;flex-direction:column;gap:12px}.sw-action{min-height:64px;padding:12px 18px;border-radius:18px;border:2px solid var(--course);display:flex;align-items:center;gap:16px;background:transparent;color:var(--course);font-family:'Work Sans','Noto Sans KR',sans-serif;text-align:left;text-decoration:none;cursor:pointer}.sw-action.primary{background:var(--course);color:#fff}.sw-action.dim{border-color:color-mix(in srgb,var(--course) 26%,#d8d4ce);color:#626262}.sw-action svg{width:24px;height:24px;flex:0 0 auto}.sw-action span{display:block}.sw-action .en{font-size:16px;font-weight:700;letter-spacing:.03em}.sw-action .ko{margin-top:2px;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:400;opacity:.72}.sw-action-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.sw-action-row .sw-action{min-height:58px;padding:11px 12px;gap:10px;border-radius:16px}.sw-action-row .sw-action .en{font-size:13px}.sw-action-row .sw-action .ko{font-size:11px}
+  .sw-title-ko{font-weight:500}
+  #googleMapNav,#naverMapNav{display:none!important}.like-tour-nav{display:none;align-items:center;gap:4px;padding:5px 3px;border:0;background:transparent;color:#1A1A1A;cursor:pointer}.like-tour-nav svg{overflow:visible}.like-tour-nav.liked .like-heart{fill:#e34b5f;stroke:#e34b5f}.like-count{min-width:22px;font-family:'Work Sans',sans-serif;font-size:12px;font-weight:600;color:#555;text-align:left}
+  @media(max-width:390px){.sw-card{padding-left:22px;padding-right:22px}.sw-title{font-size:44px}.sw-cover .sw-title{font-size:36px}.sw-content .sw-title{font-size:40px}.sw-tags{font-size:18px}}
+
+</style>
+</head>
+<body>
+<div class="app">
+<div class="phone" id="phone">
+
+  <!-- 로고바 -->
+  <div class="logo-bar">
+    <button class="back-btn" id="backBtn" onclick="goBack()">← Back</button>
+    <div style="flex:1"></div>
+    <div style="display:flex;align-items:center;gap:2px">
+      <a id="googleMapNav" href="#" target="_blank" style="display:none;align-items:center;justify-content:center;text-decoration:none;padding:5px;background:none;border:none;cursor:pointer">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="9" fill="white" stroke="#E0E0E0" stroke-width="0.5"/>
+          <path d="M14.5 10.2c0-.4 0-.7-.1-1H10v1.9h2.5c-.1.6-.5 1.1-1 1.4v1.2h1.6c1-.9 1.4-2.2 1.4-3.5z" fill="#4285F4"/>
+          <path d="M10 15c1.2 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.2-.8-2.6-1.9H5.8v1.2C6.6 14.1 8.2 15 10 15z" fill="#34A853"/>
+          <path d="M7.4 11.3c-.1-.3-.2-.6-.2-1s.1-.7.2-1V8.1H5.8C5.3 9 5 10 5 11s.3 2 .8 2.9l1.6-1.6z" fill="#FBBC05"/>
+          <path d="M10 7.4c.7 0 1.3.2 1.8.7l1.3-1.3C12.3 6 11.2 5.5 10 5.5c-1.8 0-3.4.9-4.2 2.6l1.6 1.2C7.8 8.2 8.8 7.4 10 7.4z" fill="#EA4335"/>
+        </svg>
+      </a>
+      <a id="naverMapNav" href="#" target="_blank" style="display:none;align-items:center;justify-content:center;text-decoration:none;padding:5px;background:none;border:none;cursor:pointer">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <circle cx="10" cy="10" r="9" fill="#03C75A"/>
+          <path d="M6 6h2.3l3.4 5.2V6H14v8h-2.3L8.3 8.8V14H6V6z" fill="white"/>
+        </svg>
+      </a>
+      <button class="like-tour-nav" id="likeTourNav" onclick="toggleCourseLike()" aria-label="이 코스 좋아요">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path class="like-heart" d="M10 16.7S3.2 12.6 3.2 7.7A3.7 3.7 0 0 1 10 5.6a3.7 3.7 0 0 1 6.8 2.1c0 4.9-6.8 9-6.8 9z" stroke="#1A1A1A" stroke-width="1.35" stroke-linejoin="round"/></svg>
+        <span class="like-count" id="likeCount">0</span>
+      </button>
+      <button class="save-tour-nav" id="saveTourNav" onclick="saveTourFromNav()" style="display:none;background:none;border:none;cursor:pointer;padding:6px;align-items:center;justify-content:center">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path id="saveTourNavIcon" d="M4 3h12v15l-6-3.5L4 18V3z" stroke="#1A1A1A" stroke-width="1.5" fill="none"/>
+        </svg>
+      </button>
+      <button onclick="openProfile()" style="background:none;border:none;cursor:pointer;padding:6px;display:flex;align-items:center;">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <circle cx="11" cy="7.5" r="3.5" stroke="#1A1A1A" stroke-width="1.5"/>
+          <path d="M3 19c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="#1A1A1A" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ 홈 ══ -->
+  <div class="screen active" id="s-home">
+    <div style="padding:22px 18px 20px">
+      <img src="assets/logo.png" style="width:90px;display:block;margin-bottom:18px" alt="Slow Walker">
+      <div style="font-size:26px;font-weight:700;color:#1A1A1A;letter-spacing:-1px;line-height:1.1;margin-bottom:4px">Where do you<br>want to go?</div>
+      <div style="font-family:'Noto Sans KR',sans-serif;font-size:14px;font-weight:400;color:#555;margin-bottom:20px">어디로 떠나고 싶어요?</div>
+
+      <!-- 검색 입력창 -->
+      <div style="position:relative;margin-bottom:8px">
+        <input id="countrySearch" type="text"
+          placeholder="Search a city or country · 도시 또는 나라 검색"
+          oninput="filterCountries(this.value)"
+          onfocus="showAllCountries()"
+          style="width:100%;padding:12px 16px;border:1.5px solid #D8D4CE;background:#F6F3EF;outline:none;font-family:'Work Sans',sans-serif;font-size:13px;color:#1A1A1A;border-radius:12px">
+        <svg style="position:absolute;right:14px;top:50%;transform:translateY(-50%);opacity:0.4" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="7" cy="7" r="5" stroke="#1A1A1A" stroke-width="1.5"/>
+          <path d="M11 11l3 3" stroke="#1A1A1A" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <!-- 검색 결과 -->
+      <div id="searchResults" style="display:none;flex-direction:column;gap:6px;margin-bottom:16px"></div>
+
+      <!-- 전체 목록 (기본) -->
+      <div id="allCountries" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px" id="countryGrid"></div>
+
+      <div style="display:flex;border-top:1px solid #D8D4CE;padding-top:16px">
+        <div style="flex:1;text-align:center"><div style="font-size:20px;font-weight:700;color:#1A1A1A;letter-spacing:-1px">3</div><div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#999">Cities</div><div style="font-family:'Noto Sans KR',sans-serif;font-size:10px;font-weight:400;color:#999">도시</div></div>
+        <div style="flex:1;text-align:center;border-left:1px solid #D8D4CE"><div style="font-size:20px;font-weight:700;color:#1A1A1A;letter-spacing:-1px">4</div><div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#999">Routes</div><div style="font-family:'Noto Sans KR',sans-serif;font-size:10px;font-weight:400;color:#999">코스</div></div>
+        <div style="flex:1;text-align:center;border-left:1px solid #D8D4CE"><div style="font-size:20px;font-weight:700;color:#1A1A1A;letter-spacing:-1px">21</div><div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#999">Spots</div><div style="font-family:'Noto Sans KR',sans-serif;font-size:10px;font-weight:400;color:#999">스팟</div></div>
+      </div>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid #D8D4CE">
+        <div onclick="showScreen('s-register')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#1A1A1A;cursor:pointer;border-radius:14px">
+          <div><div style="font-size:11px;font-weight:600;letter-spacing:1px;color:#F6F3EF">Become a Guide</div><div style="font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:400;color:#999;margin-top:2px">가이드로 등록하기</div></div>
+          <span style="color:#666;font-size:14px">→</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 도시 선택 ══ -->
+  <div class="screen" id="s-country">
+    <div style="padding:20px 18px">
+      <div id="countryHeader" style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line)"></div>
+      <div id="cityList" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+  </div>
+
+  <!-- ══ 코스 선택 ══ -->
+  <div class="screen" id="s-city">
+    <div style="padding:20px 18px">
+      <div id="cityHeader" style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line)"></div>
+      <div id="routeList" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+  </div>
+
+  <!-- ══ 슬라이드 뷰어 ══ -->
+  <div class="screen s-slides" id="s-slides">
+    <div class="slides-wrap">
+      <div class="slide-track" id="slideTrack">
+        
+    
+    <div class="course" id="course-seoul-hannam" style="display:none" data-title-en="K-Celeb Tour in Hannam" data-title-kr="한남동 셀럽 코스" data-city="Seoul" data-city-kr="서울" data-color="#742583" data-map-url="https://maps.app.goo.gl/YOUR_SEOUL" data-route-id="seoul-hannam">
+      <div class="slide"><article class="sw-card sw-cover" style="--course:#742583;--course-soft:#e6ddf4"><div class="sw-logo-stamp" aria-hidden="true"></div><div class="sw-place">Seoul, Korea</div><h2 class="sw-title">K-Celeb Tour<br>in Hannam</h2><p class="sw-title-ko">한남동 셀럽 코스</p><div class="sw-guide"><div><small>Today's local guide</small><strong>Seo Woo</strong></div><div class="sw-guide-spots">4 Spots&nbsp; ●●●●</div></div><p class="sw-tags">#BTS #Seventeen #Jenny #foodie</p></article></div>
+      <div class="slide"><article class="sw-card sw-content" style="--course:#742583;--course-soft:#e6ddf4"><div class="sw-photo"><img src="assets/photos/seoul-dongah-naengmyeon.jpg" alt="동아냉면 장소 사진" onload="this.parentElement.classList.add('loaded')" onerror="this.hidden=true"><span>PLACE PHOTO</span></div><div class="sw-title-row"><h2 class="sw-title">Dongah Naengmyeon</h2><div class="sw-map-buttons"><a class="sw-map-button google" href="https://www.google.com/maps/search/?api=1&query=Dongah%20Naengmyeon%20Seoul" target="_blank" aria-label="동아냉면 구글맵 열기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="white"/><path d="M14.5 10.2c0-.4 0-.7-.1-1H10v1.9h2.5c-.1.6-.5 1.1-1 1.4v1.2h1.6c1-.9 1.4-2.2 1.4-3.5z" fill="#4285F4"/><path d="M10 15c1.2 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.2-.8-2.6-1.9H5.8v1.2C6.6 14.1 8.2 15 10 15z" fill="#34A853"/><path d="M7.4 11.3c-.1-.3-.2-.6-.2-1s.1-.7.2-1V8.1H5.8C5.3 9 5 10 5 11s.3 2 .8 2.9l1.6-1.6z" fill="#FBBC05"/><path d="M10 7.4c.7 0 1.3.2 1.8.7l1.3-1.3C12.3 6 11.2 5.5 10 5.5c-1.8 0-3.4.9-4.2 2.6l1.6 1.2C7.8 8.2 8.8 7.4 10 7.4z" fill="#EA4335"/></svg></a><a class="sw-map-button naver" href="https://map.naver.com/p/search/%EB%8F%99%EC%95%84%EB%83%89%EB%A9%B4%20%EC%84%9C%EC%9A%B8" target="_blank" aria-label="동아냉면 네이버맵 열기">N</a></div></div><p class="sw-title-ko">동아냉면</p><div class="sw-copy"><p>A local legend for years. Visited by BTS Jin.</p><p class="ko">소문난 한남동 냉면 맛집. 방탄 진 방문.</p></div><p class="sw-tags">#BTS #Jin #Seventeen #foodie</p></article></div>
+<div class="slide"><article class="sw-card sw-content" style="--course:#742583;--course-soft:#e6ddf4"><div class="sw-photo"><img src="assets/photos/seoul-lamie.jpg" alt="라미 장소 사진" onload="this.parentElement.classList.add('loaded')" onerror="this.hidden=true"><span>PLACE PHOTO</span></div><div class="sw-title-row"><h2 class="sw-title">L'amie</h2><div class="sw-map-buttons"><a class="sw-map-button google" href="https://www.google.com/maps/search/?api=1&query=L'amie%20Seoul" target="_blank" aria-label="라미 구글맵 열기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="white"/><path d="M14.5 10.2c0-.4 0-.7-.1-1H10v1.9h2.5c-.1.6-.5 1.1-1 1.4v1.2h1.6c1-.9 1.4-2.2 1.4-3.5z" fill="#4285F4"/><path d="M10 15c1.2 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.2-.8-2.6-1.9H5.8v1.2C6.6 14.1 8.2 15 10 15z" fill="#34A853"/><path d="M7.4 11.3c-.1-.3-.2-.6-.2-1s.1-.7.2-1V8.1H5.8C5.3 9 5 10 5 11s.3 2 .8 2.9l1.6-1.6z" fill="#FBBC05"/><path d="M10 7.4c.7 0 1.3.2 1.8.7l1.3-1.3C12.3 6 11.2 5.5 10 5.5c-1.8 0-3.4.9-4.2 2.6l1.6 1.2C7.8 8.2 8.8 7.4 10 7.4z" fill="#EA4335"/></svg></a><a class="sw-map-button naver" href="https://map.naver.com/p/search/%EB%9D%BC%EB%AF%B8%20%EC%84%9C%EC%9A%B8" target="_blank" aria-label="라미 네이버맵 열기">N</a></div></div><p class="sw-title-ko">라미</p><div class="sw-copy"><p>Crispy pastries loved by locals. Davichi Minkyung's go-to bakery.</p><p class="ko">바삭바삭하게 갓 구운 빵으로 유명한 동네 강민경 추천!</p></div><p class="sw-tags">#Local's pick #Pastry #Bakery</p></article></div>
+<div class="slide"><article class="sw-card sw-content" style="--course:#742583;--course-soft:#e6ddf4"><div class="sw-photo"><img src="assets/photos/seoul-tamburins.jpg" alt="탬버린즈 장소 사진" onload="this.parentElement.classList.add('loaded')" onerror="this.hidden=true"><span>PLACE PHOTO</span></div><div class="sw-title-row"><h2 class="sw-title">Tamburins</h2><div class="sw-map-buttons"><a class="sw-map-button google" href="https://www.google.com/maps/search/?api=1&query=Tamburins%20Seoul" target="_blank" aria-label="탬버린즈 구글맵 열기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="white"/><path d="M14.5 10.2c0-.4 0-.7-.1-1H10v1.9h2.5c-.1.6-.5 1.1-1 1.4v1.2h1.6c1-.9 1.4-2.2 1.4-3.5z" fill="#4285F4"/><path d="M10 15c1.2 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.2-.8-2.6-1.9H5.8v1.2C6.6 14.1 8.2 15 10 15z" fill="#34A853"/><path d="M7.4 11.3c-.1-.3-.2-.6-.2-1s.1-.7.2-1V8.1H5.8C5.3 9 5 10 5 11s.3 2 .8 2.9l1.6-1.6z" fill="#FBBC05"/><path d="M10 7.4c.7 0 1.3.2 1.8.7l1.3-1.3C12.3 6 11.2 5.5 10 5.5c-1.8 0-3.4.9-4.2 2.6l1.6 1.2C7.8 8.2 8.8 7.4 10 7.4z" fill="#EA4335"/></svg></a><a class="sw-map-button naver" href="https://map.naver.com/p/search/%ED%83%AC%EB%B2%84%EB%A6%B0%EC%A6%88%20%EC%84%9C%EC%9A%B8" target="_blank" aria-label="탬버린즈 네이버맵 열기">N</a></div></div><p class="sw-title-ko">탬버린즈</p><div class="sw-copy"><p>Gentle Monster's sister brand for perfume & hand care. Featured by Jennie.</p><p class="ko">젠틀몬스터의 자매 브랜드. 감각적인 향수와 핸드크림.</p></div><p class="sw-tags">#Jennie #Gentle Monster #Perfume</p></article></div>
+<div class="slide"><article class="sw-card sw-content" style="--course:#742583;--course-soft:#e6ddf4"><div class="sw-photo"><img src="assets/photos/seoul-gamjatang.jpg" alt="한남동 감자탕 장소 사진" onload="this.parentElement.classList.add('loaded')" onerror="this.hidden=true"><span>PLACE PHOTO</span></div><div class="sw-title-row"><h2 class="sw-title">Hannamdong Gamjatang</h2><div class="sw-map-buttons"><a class="sw-map-button google" href="https://www.google.com/maps/search/?api=1&query=Hannamdong%20Gamjatang%20Seoul" target="_blank" aria-label="한남동 감자탕 구글맵 열기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="white"/><path d="M14.5 10.2c0-.4 0-.7-.1-1H10v1.9h2.5c-.1.6-.5 1.1-1 1.4v1.2h1.6c1-.9 1.4-2.2 1.4-3.5z" fill="#4285F4"/><path d="M10 15c1.2 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.2-.8-2.6-1.9H5.8v1.2C6.6 14.1 8.2 15 10 15z" fill="#34A853"/><path d="M7.4 11.3c-.1-.3-.2-.6-.2-1s.1-.7.2-1V8.1H5.8C5.3 9 5 10 5 11s.3 2 .8 2.9l1.6-1.6z" fill="#FBBC05"/><path d="M10 7.4c.7 0 1.3.2 1.8.7l1.3-1.3C12.3 6 11.2 5.5 10 5.5c-1.8 0-3.4.9-4.2 2.6l1.6 1.2C7.8 8.2 8.8 7.4 10 7.4z" fill="#EA4335"/></svg></a><a class="sw-map-button naver" href="https://map.naver.com/p/search/%ED%95%9C%EB%82%A8%EB%8F%99%20%EA%B0%90%EC%9E%90%ED%83%95%20%EC%84%9C%EC%9A%B8" target="_blank" aria-label="한남동 감자탕 네이버맵 열기">N</a></div></div><p class="sw-title-ko">한남동 감자탕</p><div class="sw-copy"><p>A celebrity-favorite spot. Seowoo's pick: Pyjo-jjim (뼈찜).</p><p class="ko">아이돌도 다녀간 한남동 맛집. 서우의 추천 메뉴: 매콤한 뼈찜</p></div><p class="sw-tags">#BTS #RM #Jin #Seventeen #foodie</p></article></div>
+      <div class="slide"><article class="sw-card sw-ending" style="--course:#742583;--course-soft:#e6ddf4"><h2 class="sw-title">K-Celeb Tour in Hannam</h2><p class="sw-title-ko">한남동 셀럽 코스</p><div class="sw-actions"><a class="sw-action primary" href="https://www.google.com/maps/dir/?api=1&origin=Dongah+Naengmyeon+Seoul&destination=Hannamdong+Gamjatang+Seoul&travelmode=walking&waypoints=L%27amie+Seoul%7CTamburins+Seoul" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12z" fill="currentColor"/><circle cx="12" cy="9" r="2.4" fill="#fff"/></svg><span><span class="en">Open full route in Google Maps</span><span class="ko">첫 장소부터 마지막 장소까지 보기</span></span></a><button class="sw-action" onclick="saveTourFromClosing(this)" data-route-id="seoul-hannam" data-title-en="K-Celeb Tour in Hannam" data-title-kr="한남동 셀럽 코스" data-color="#742583"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" aria-hidden="true"><path d="M6 4h12v17l-6-4-6 4V4z"/></svg><span><span class="en save-label-en">Save this tour</span><span class="ko save-label-kr">이 투어 저장하기</span></span></button><div class="sw-action-row"><button class="sw-action dim" onclick="shareRouteImage("seoul-hannam")"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="m7 16 3.5-4 2.5 3 2-2.3L18 16"/></svg><span><span class="en">Share image</span><span class="ko">이미지로 코스 공유하기</span></span></button><button class="sw-action dim" onclick="shareRouteLink("K-Celeb Tour in Hannam · 한남동 셀럽 코스", "https://slowwalker.kr/routes/seoul-hannam")"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1"/></svg><span><span class="en">Share link</span><span class="ko">링크로 코스 공유하기</span></span></button></div></div></article></div>
+    </div>
+
+    <div class="course" id="course-berlin-korean" style="display:none" data-title-en="A Korean Day in Berlin" data-title-kr="베를린에서 보내는 코리안데이" data-city="Berlin" data-city-kr="베를린" data-color="#bd1119" data-map-url="https://maps.app.goo.gl/YOUR_BERLIN" data-route-id="berlin-korean">
+      <div class="slide"><article class="sw-card sw-cover" style="--course:#bd1119;--course-soft:#f1dfe2"><div class="sw-logo-stamp" aria-hidden="true"></div><div class="sw-place">Berlin, Germany</div><h2 class="sw-title">A Korean Day<br>in Berlin</h2><p class="sw-title-ko">베를린에서 보내는 코리안데이</p><div class="sw-guide"><div><small>Today's local guide</small><strong>Slow Walker</strong></div><div class="sw-guide-spots">4 Spots&nbsp; ●●●●</div></div><p class="sw-tags">#Karaoke #Chicken #K-beauty #Cafe</p></article></div>
+      <div class="slide"><article class="sw-card sw-content" style="--course:#bd1119;--course-soft:#f1dfe2"><div class="sw-photo"><img src="assets/photos/berlin-schim-pause.jpg" alt="쉼 : 파우제 장소 사진" onload="this.parentElement.classList.add('loaded')" onerror="this.hidden=true"><span>PLACE PHOTO</span></div><div class="sw-title-row"><h2 class="sw-title">Schim:Pause</h2><div class="sw-map-buttons"><a class="sw-map-button google" href="https://www.google.com/maps/search/?api=1&query=Schim%3APause%20Berlin" target="_blank" aria-label="쉼 : 파우제 구글맵 열기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="white"/><path d="M14.5 10.2c0-.4 0-.7-.1-1H10v1.9h2.5c-.1.6-.5 1.1-1 1.4v1.2h1.6c1-.9 1.4-2.2 1.4-3.5z" fill="#4285F4"/><path d="M10 15c1.2 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.2-.8-2.6-1.9H5.8v1.2C6.6 14.1 8.2 15 10 15z" fill="#34A853"/><path d="M7.4 11.3c-.1-.3-.2-.6-.2-1s.1-.7.2-1V8.1H5.8C5.3 9 5 10 5 11s.3 2 .8 2.9l1.6-1.6z" fill="#FBBC05"/><path d="M10 7.4c.7 0 1.3.2 1.8.7l1.3-1.3C12.3 6 11.2 5.5 10 5.5c-1.8 0-3.4.9-4.2 2.6l1.6 1.2C7.8 8.2 8.8 7.4 10 7.4z" fill="#EA4335"/></svg></a></div></div><p class="sw-title-ko">쉼 : 파우제</p><div class="sw-copy"><p>A local cafe with homemade French toast and Korean desserts.</p><p class="ko">홈메이드 프렌치토스트와 한국 디저트를 맛볼 수 있는 로컬카페</p></div><p class="sw-tags">#Cafe #K-Dessert #Home made</p></article></div>
+<div class="slide"><article class="sw-card sw-content" style="--course:#bd1119;--course-soft:#f1dfe2"><div class="sw-photo"><img src="assets/photos/berlin-keauti.jpg" alt="큐티 장소 사진" onload="this.parentElement.classList.add('loaded')" onerror="this.hidden=true"><span>PLACE PHOTO</span></div><div class="sw-title-row"><h2 class="sw-title">KEAUTI</h2><div class="sw-map-buttons"><a class="sw-map-button google" href="https://www.google.com/maps/search/?api=1&query=KEAUTI%20Berlin" target="_blank" aria-label="큐티 구글맵 열기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="white"/><path d="M14.5 10.2c0-.4 0-.7-.1-1H10v1.9h2.5c-.1.6-.5 1.1-1 1.4v1.2h1.6c1-.9 1.4-2.2 1.4-3.5z" fill="#4285F4"/><path d="M10 15c1.2 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.2-.8-2.6-1.9H5.8v1.2C6.6 14.1 8.2 15 10 15z" fill="#34A853"/><path d="M7.4 11.3c-.1-.3-.2-.6-.2-1s.1-.7.2-1V8.1H5.8C5.3 9 5 10 5 11s.3 2 .8 2.9l1.6-1.6z" fill="#FBBC05"/><path d="M10 7.4c.7 0 1.3.2 1.8.7l1.3-1.3C12.3 6 11.2 5.5 10 5.5c-1.8 0-3.4.9-4.2 2.6l1.6 1.2C7.8 8.2 8.8 7.4 10 7.4z" fill="#EA4335"/></svg></a></div></div><p class="sw-title-ko">큐티</p><div class="sw-copy"><p>A Korean beauty shop at Rosenthaler Platz. You can find rare skincare products.</p><p class="ko">로젠탈러플라츠와 한국 화장품가게. 독일에서 찾기 힘든 기초화장품 위주</p></div><p class="sw-tags">#K-Beauty #Skincare</p></article></div>
+<div class="slide"><article class="sw-card sw-content" style="--course:#bd1119;--course-soft:#f1dfe2"><div class="sw-photo"><img src="assets/photos/berlin-kokio.jpg" alt="꼬끼오 장소 사진" onload="this.parentElement.classList.add('loaded')" onerror="this.hidden=true"><span>PLACE PHOTO</span></div><div class="sw-title-row"><h2 class="sw-title">KOKIO</h2><div class="sw-map-buttons"><a class="sw-map-button google" href="https://www.google.com/maps/search/?api=1&query=KOKIO%20Berlin" target="_blank" aria-label="꼬끼오 구글맵 열기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="white"/><path d="M14.5 10.2c0-.4 0-.7-.1-1H10v1.9h2.5c-.1.6-.5 1.1-1 1.4v1.2h1.6c1-.9 1.4-2.2 1.4-3.5z" fill="#4285F4"/><path d="M10 15c1.2 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.2-.8-2.6-1.9H5.8v1.2C6.6 14.1 8.2 15 10 15z" fill="#34A853"/><path d="M7.4 11.3c-.1-.3-.2-.6-.2-1s.1-.7.2-1V8.1H5.8C5.3 9 5 10 5 11s.3 2 .8 2.9l1.6-1.6z" fill="#FBBC05"/><path d="M10 7.4c.7 0 1.3.2 1.8.7l1.3-1.3C12.3 6 11.2 5.5 10 5.5c-1.8 0-3.4.9-4.2 2.6l1.6 1.2C7.8 8.2 8.8 7.4 10 7.4z" fill="#EA4335"/></svg></a></div></div><p class="sw-title-ko">꼬끼오</p><div class="sw-copy"><p>The best Korean fried chicken in Berlin. Slow Walker's pick : Soy Garlic.</p><p class="ko">베를린에서 모르면 간첩인 유명한 치킨 성지. Slow Walker 픽 양념과 치킨은?</p></div><p class="sw-tags">#Chicken #Local's pick</p></article></div>
+<div class="slide"><article class="sw-card sw-content" style="--course:#bd1119;--course-soft:#f1dfe2"><div class="sw-photo"><img src="assets/photos/berlin-sori-kono.jpg" alt="소리 코노 장소 사진" onload="this.parentElement.classList.add('loaded')" onerror="this.hidden=true"><span>PLACE PHOTO</span></div><div class="sw-title-row"><h2 class="sw-title">SORI KONO</h2><div class="sw-map-buttons"><a class="sw-map-button google" href="https://www.google.com/maps/search/?api=1&query=SORI%20KONO%20Berlin" target="_blank" aria-label="소리 코노 구글맵 열기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="white"/><path d="M14.5 10.2c0-.4 0-.7-.1-1H10v1.9h2.5c-.1.6-.5 1.1-1 1.4v1.2h1.6c1-.9 1.4-2.2 1.4-3.5z" fill="#4285F4"/><path d="M10 15c1.2 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.2-.8-2.6-1.9H5.8v1.2C6.6 14.1 8.2 15 10 15z" fill="#34A853"/><path d="M7.4 11.3c-.1-.3-.2-.6-.2-1s.1-.7.2-1V8.1H5.8C5.3 9 5 10 5 11s.3 2 .8 2.9l1.6-1.6z" fill="#FBBC05"/><path d="M10 7.4c.7 0 1.3.2 1.8.7l1.3-1.3C12.3 6 11.2 5.5 10 5.5c-1.8 0-3.4.9-4.2 2.6l1.6 1.2C7.8 8.2 8.8 7.4 10 7.4z" fill="#EA4335"/></svg></a></div></div><p class="sw-title-ko">소리 코노</p><div class="sw-copy"><p>Berlin's first booth karaoke. Korean ramyeon available!</p><p class="ko">베를린 최초의 코인 노래방. 매콤한 신라면 향과 라면 기계까지!</p></div><p class="sw-tags">#Karaoke #K-pop #Ramyeon</p></article></div>
+      <div class="slide"><article class="sw-card sw-ending" style="--course:#bd1119;--course-soft:#f1dfe2"><h2 class="sw-title">A Korean Day in Berlin</h2><p class="sw-title-ko">베를린에서 보내는 코리안데이</p><div class="sw-actions"><a class="sw-action primary" href="https://www.google.com/maps/dir/?api=1&origin=Schim%3APause+Berlin&destination=SORI+KONO+Berlin&travelmode=walking&waypoints=KEAUTI+Berlin%7CKOKIO+Berlin" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12z" fill="currentColor"/><circle cx="12" cy="9" r="2.4" fill="#fff"/></svg><span><span class="en">Open full route in Google Maps</span><span class="ko">첫 장소부터 마지막 장소까지 보기</span></span></a><button class="sw-action" onclick="saveTourFromClosing(this)" data-route-id="berlin-korean" data-title-en="A Korean Day in Berlin" data-title-kr="베를린에서 보내는 코리안데이" data-color="#bd1119"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" aria-hidden="true"><path d="M6 4h12v17l-6-4-6 4V4z"/></svg><span><span class="en save-label-en">Save this tour</span><span class="ko save-label-kr">이 투어 저장하기</span></span></button><div class="sw-action-row"><button class="sw-action dim" onclick="shareRouteImage("berlin-korean")"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="m7 16 3.5-4 2.5 3 2-2.3L18 16"/></svg><span><span class="en">Share image</span><span class="ko">이미지로 코스 공유하기</span></span></button><button class="sw-action dim" onclick="shareRouteLink("A Korean Day in Berlin · 베를린에서 보내는 코리안데이", "https://slowwalker.kr/routes/berlin-korean")"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1"/></svg><span><span class="en">Share link</span><span class="ko">링크로 코스 공유하기</span></span></button></div></div></article></div>
+    </div>
+
+    <div class="course" id="course-busan-jazz" style="display:none" data-title-en="Jazz & Bites in Gwangalli" data-title-kr="광안리는 재즈도 식후경" data-city="Busan" data-city-kr="부산" data-color="#235bac" data-map-url="https://maps.app.goo.gl/YOUR_BUSAN_JAZZ" data-route-id="busan-jazz">
+      <div class="slide"><article class="sw-card sw-cover" style="--course:#235bac;--course-soft:#dceef8"><div class="sw-logo-stamp" aria-hidden="true"></div><div class="sw-place">Busan, Korea</div><h2 class="sw-title">Jazz & Bites<br>in Gwangalli</h2><p class="sw-title-ko">광안리는 재즈도 식후경</p><div class="sw-guide"><div><small>Today's local guide</small><strong>Slow Walker</strong></div><div class="sw-guide-spots">4 Spots&nbsp; ●●●●</div></div><p class="sw-tags">#Jazz #Vinyl #Michelin #Music</p></article></div>
+      <div class="slide"><article class="sw-card sw-content" style="--course:#235bac;--course-soft:#dceef8"><div class="sw-photo"><img src="assets/photos/busan-anmok.jpg" alt="안목 장소 사진" onload="this.parentElement.classList.add('loaded')" onerror="this.hidden=true"><span>PLACE PHOTO</span></div><div class="sw-title-row"><h2 class="sw-title">Anmok</h2><div class="sw-map-buttons"><a class="sw-map-button google" href="https://www.google.com/maps/search/?api=1&query=Anmok%20Busan" target="_blank" aria-label="안목 구글맵 열기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="white"/><path d="M14.5 10.2c0-.4 0-.7-.1-1H10v1.9h2.5c-.1.6-.5 1.1-1 1.4v1.2h1.6c1-.9 1.4-2.2 1.4-3.5z" fill="#4285F4"/><path d="M10 15c1.2 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.2-.8-2.6-1.9H5.8v1.2C6.6 14.1 8.2 15 10 15z" fill="#34A853"/><path d="M7.4 11.3c-.1-.3-.2-.6-.2-1s.1-.7.2-1V8.1H5.8C5.3 9 5 10 5 11s.3 2 .8 2.9l1.6-1.6z" fill="#FBBC05"/><path d="M10 7.4c.7 0 1.3.2 1.8.7l1.3-1.3C12.3 6 11.2 5.5 10 5.5c-1.8 0-3.4.9-4.2 2.6l1.6 1.2C7.8 8.2 8.8 7.4 10 7.4z" fill="#EA4335"/></svg></a><a class="sw-map-button naver" href="https://map.naver.com/p/search/%EC%95%88%EB%AA%A9%20%EB%B6%80%EC%82%B0" target="_blank" aria-label="안목 네이버맵 열기">N</a></div></div><p class="sw-title-ko">안목</p><div class="sw-copy"><p>Michelin-listed dwaeji-gukbap (돼지국밥), Busan's comfort pork soup & rice.</p><p class="ko">미쉐린 피크인 선지 돼지국밥. 깔끔하고 모던하게 해석한 국밥.</p></div><p class="sw-tags">#Michelin #Comfort food #foodie</p></article></div>
+<div class="slide"><article class="sw-card sw-content" style="--course:#235bac;--course-soft:#dceef8"><div class="sw-photo"><img src="assets/photos/busan-patbingsu.jpg" alt="남천 팥빙수 장소 사진" onload="this.parentElement.classList.add('loaded')" onerror="this.hidden=true"><span>PLACE PHOTO</span></div><div class="sw-title-row"><h2 class="sw-title">Namcheon Patbingsu</h2><div class="sw-map-buttons"><a class="sw-map-button google" href="https://www.google.com/maps/search/?api=1&query=Namcheon%20Patbingsu%20Busan" target="_blank" aria-label="남천 팥빙수 구글맵 열기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="white"/><path d="M14.5 10.2c0-.4 0-.7-.1-1H10v1.9h2.5c-.1.6-.5 1.1-1 1.4v1.2h1.6c1-.9 1.4-2.2 1.4-3.5z" fill="#4285F4"/><path d="M10 15c1.2 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.2-.8-2.6-1.9H5.8v1.2C6.6 14.1 8.2 15 10 15z" fill="#34A853"/><path d="M7.4 11.3c-.1-.3-.2-.6-.2-1s.1-.7.2-1V8.1H5.8C5.3 9 5 10 5 11s.3 2 .8 2.9l1.6-1.6z" fill="#FBBC05"/><path d="M10 7.4c.7 0 1.3.2 1.8.7l1.3-1.3C12.3 6 11.2 5.5 10 5.5c-1.8 0-3.4.9-4.2 2.6l1.6 1.2C7.8 8.2 8.8 7.4 10 7.4z" fill="#EA4335"/></svg></a><a class="sw-map-button naver" href="https://map.naver.com/p/search/%EB%82%A8%EC%B2%9C%20%ED%8C%A5%EB%B9%99%EC%88%98%20%EB%B6%80%EC%82%B0" target="_blank" aria-label="남천 팥빙수 네이버맵 열기">N</a></div></div><p class="sw-title-ko">남천 팥빙수</p><div class="sw-copy"><p>A longtime local favorite for over 30 years.</p><p class="ko">30년 세월동안 사랑받는 남천동 명물. 생활의 달인에도 맛집.</p></div><p class="sw-tags">#Local's pick #Bingsu #Dessert</p></article></div>
+<div class="slide"><article class="sw-card sw-content" style="--course:#235bac;--course-soft:#dceef8"><div class="sw-photo"><img src="assets/photos/busan-phil-records.jpg" alt="필 레코드 장소 사진" onload="this.parentElement.classList.add('loaded')" onerror="this.hidden=true"><span>PLACE PHOTO</span></div><div class="sw-title-row"><h2 class="sw-title">Phil Records</h2><div class="sw-map-buttons"><a class="sw-map-button google" href="https://www.google.com/maps/search/?api=1&query=Phil%20Records%20Busan" target="_blank" aria-label="필 레코드 구글맵 열기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="white"/><path d="M14.5 10.2c0-.4 0-.7-.1-1H10v1.9h2.5c-.1.6-.5 1.1-1 1.4v1.2h1.6c1-.9 1.4-2.2 1.4-3.5z" fill="#4285F4"/><path d="M10 15c1.2 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.2-.8-2.6-1.9H5.8v1.2C6.6 14.1 8.2 15 10 15z" fill="#34A853"/><path d="M7.4 11.3c-.1-.3-.2-.6-.2-1s.1-.7.2-1V8.1H5.8C5.3 9 5 10 5 11s.3 2 .8 2.9l1.6-1.6z" fill="#FBBC05"/><path d="M10 7.4c.7 0 1.3.2 1.8.7l1.3-1.3C12.3 6 11.2 5.5 10 5.5c-1.8 0-3.4.9-4.2 2.6l1.6 1.2C7.8 8.2 8.8 7.4 10 7.4z" fill="#EA4335"/></svg></a><a class="sw-map-button naver" href="https://map.naver.com/p/search/%ED%95%84%20%EB%A0%88%EC%BD%94%EB%93%9C%20%EB%B6%80%EC%82%B0" target="_blank" aria-label="필 레코드 네이버맵 열기">N</a></div></div><p class="sw-title-ko">필 레코드</p><div class="sw-copy"><p>Curated by a 40-year vinyl collector. You can find rare vintage vinyls.</p><p class="ko">40년 LP 명장의 큐레이션. 서울에서부터 유명했던 레코드의 성지.</p></div><p class="sw-tags">#Vinyl #Record #Music</p></article></div>
+<div class="slide"><article class="sw-card sw-content" style="--course:#235bac;--course-soft:#dceef8"><div class="sw-photo"><img src="assets/photos/busan-jazzpresso.jpg" alt="재즈프레소 장소 사진" onload="this.parentElement.classList.add('loaded')" onerror="this.hidden=true"><span>PLACE PHOTO</span></div><div class="sw-title-row"><h2 class="sw-title">Jazzpresso</h2><div class="sw-map-buttons"><a class="sw-map-button google" href="https://www.google.com/maps/search/?api=1&query=Jazzpresso%20Busan" target="_blank" aria-label="재즈프레소 구글맵 열기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="white"/><path d="M14.5 10.2c0-.4 0-.7-.1-1H10v1.9h2.5c-.1.6-.5 1.1-1 1.4v1.2h1.6c1-.9 1.4-2.2 1.4-3.5z" fill="#4285F4"/><path d="M10 15c1.2 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.2-.8-2.6-1.9H5.8v1.2C6.6 14.1 8.2 15 10 15z" fill="#34A853"/><path d="M7.4 11.3c-.1-.3-.2-.6-.2-1s.1-.7.2-1V8.1H5.8C5.3 9 5 10 5 11s.3 2 .8 2.9l1.6-1.6z" fill="#FBBC05"/><path d="M10 7.4c.7 0 1.3.2 1.8.7l1.3-1.3C12.3 6 11.2 5.5 10 5.5c-1.8 0-3.4.9-4.2 2.6l1.6 1.2C7.8 8.2 8.8 7.4 10 7.4z" fill="#EA4335"/></svg></a><a class="sw-map-button naver" href="https://map.naver.com/p/search/%EC%9E%AC%EC%A6%88%ED%94%84%EB%A0%88%EC%86%8C%20%EB%B6%80%EC%82%B0" target="_blank" aria-label="재즈프레소 네이버맵 열기">N</a></div></div><p class="sw-title-ko">재즈프레소</p><div class="sw-copy"><p>A hidden record bar with weekend jazz jams (Fri-Sun)</p><p class="ko">금·일 매번 바뀌는 색소폰과 잼 무대를 선보이는 숨은 재즈 + 레코드 바.</p></div><p class="sw-tags">#Jazz #Record bar #Jam</p></article></div>
+      <div class="slide"><article class="sw-card sw-ending" style="--course:#235bac;--course-soft:#dceef8"><h2 class="sw-title">Jazz & Bites in Gwangalli</h2><p class="sw-title-ko">광안리는 재즈도 식후경</p><div class="sw-actions"><a class="sw-action primary" href="https://www.google.com/maps/dir/?api=1&origin=Anmok+Busan&destination=Jazzpresso+Busan&travelmode=walking&waypoints=Namcheon+Patbingsu+Busan%7CPhil+Records+Busan" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12z" fill="currentColor"/><circle cx="12" cy="9" r="2.4" fill="#fff"/></svg><span><span class="en">Open full route in Google Maps</span><span class="ko">첫 장소부터 마지막 장소까지 보기</span></span></a><button class="sw-action" onclick="saveTourFromClosing(this)" data-route-id="busan-jazz" data-title-en="Jazz & Bites in Gwangalli" data-title-kr="광안리는 재즈도 식후경" data-color="#235bac"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" aria-hidden="true"><path d="M6 4h12v17l-6-4-6 4V4z"/></svg><span><span class="en save-label-en">Save this tour</span><span class="ko save-label-kr">이 투어 저장하기</span></span></button><div class="sw-action-row"><button class="sw-action dim" onclick="shareRouteImage("busan-jazz")"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="m7 16 3.5-4 2.5 3 2-2.3L18 16"/></svg><span><span class="en">Share image</span><span class="ko">이미지로 코스 공유하기</span></span></button><button class="sw-action dim" onclick="shareRouteLink("Jazz & Bites in Gwangalli · 광안리는 재즈도 식후경", "https://slowwalker.kr/routes/busan-jazz")"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1"/></svg><span><span class="en">Share link</span><span class="ko">링크로 코스 공유하기</span></span></button></div></div></article></div>
+    </div>
+
+    <div class="course" id="course-busan-station" style="display:none" data-title-en="One Lap Around Busan Station" data-title-kr="초량:부산역 한바퀴" data-city="Busan" data-city-kr="부산" data-color="#235bac" data-map-url="https://maps.app.goo.gl/YOUR_BUSAN_STATION" data-route-id="busan-station">
+      <div class="slide"><article class="sw-card sw-cover" style="--course:#235bac;--course-soft:#dceef8"><div class="sw-logo-stamp" aria-hidden="true"></div><div class="sw-place">Busan, Korea</div><h2 class="sw-title">One Lap Around<br>Busan Station</h2><p class="sw-title-ko">초량:부산역 한바퀴</p><div class="sw-guide"><div><small>Today's local guide</small><strong>Tae Sung</strong></div><div class="sw-guide-spots">5 Spots&nbsp; ●●●●●</div></div><p class="sw-tags">#Local's pick #K-food #Cafe #Shop</p></article></div>
+      <div class="slide"><article class="sw-card sw-content" style="--course:#235bac;--course-soft:#dceef8"><div class="sw-photo"><img src="assets/photos/station-hwadak.jpg" alt="초량화닥 장소 사진" onload="this.parentElement.classList.add('loaded')" onerror="this.hidden=true"><span>PLACE PHOTO</span></div><div class="sw-title-row"><h2 class="sw-title">Choryang Hwadak</h2><div class="sw-map-buttons"><a class="sw-map-button google" href="https://www.google.com/maps/search/?api=1&query=Choryang%20Hwadak%20Busan" target="_blank" aria-label="초량화닥 구글맵 열기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="white"/><path d="M14.5 10.2c0-.4 0-.7-.1-1H10v1.9h2.5c-.1.6-.5 1.1-1 1.4v1.2h1.6c1-.9 1.4-2.2 1.4-3.5z" fill="#4285F4"/><path d="M10 15c1.2 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.2-.8-2.6-1.9H5.8v1.2C6.6 14.1 8.2 15 10 15z" fill="#34A853"/><path d="M7.4 11.3c-.1-.3-.2-.6-.2-1s.1-.7.2-1V8.1H5.8C5.3 9 5 10 5 11s.3 2 .8 2.9l1.6-1.6z" fill="#FBBC05"/><path d="M10 7.4c.7 0 1.3.2 1.8.7l1.3-1.3C12.3 6 11.2 5.5 10 5.5c-1.8 0-3.4.9-4.2 2.6l1.6 1.2C7.8 8.2 8.8 7.4 10 7.4z" fill="#EA4335"/></svg></a><a class="sw-map-button naver" href="https://map.naver.com/p/search/%EC%B4%88%EB%9F%89%ED%99%94%EB%8B%A5%20%EB%B6%80%EC%82%B0" target="_blank" aria-label="초량화닥 네이버맵 열기">N</a></div></div><p class="sw-title-ko">초량화닥</p><div class="sw-copy"><p>Spicy braised chicken stew and crispy fried chicken with an addictive kick.</p><p class="ko">초량을 사로잡은 매콤한 닭볶음탕과 바삭한 통닭튀김, 중독성 강한 맛!</p></div><p class="sw-tags">#Local's pick #Spicy #Real k-food</p></article></div>
+<div class="slide"><article class="sw-card sw-content" style="--course:#235bac;--course-soft:#dceef8"><div class="sw-photo"><img src="assets/photos/station-siot-jieut.jpg" alt="시옷지읒 장소 사진" onload="this.parentElement.classList.add('loaded')" onerror="this.hidden=true"><span>PLACE PHOTO</span></div><div class="sw-title-row"><h2 class="sw-title">Siot-Jieut</h2><div class="sw-map-buttons"><a class="sw-map-button google" href="https://www.google.com/maps/search/?api=1&query=Siot-Jieut%20Busan" target="_blank" aria-label="시옷지읒 구글맵 열기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="white"/><path d="M14.5 10.2c0-.4 0-.7-.1-1H10v1.9h2.5c-.1.6-.5 1.1-1 1.4v1.2h1.6c1-.9 1.4-2.2 1.4-3.5z" fill="#4285F4"/><path d="M10 15c1.2 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.2-.8-2.6-1.9H5.8v1.2C6.6 14.1 8.2 15 10 15z" fill="#34A853"/><path d="M7.4 11.3c-.1-.3-.2-.6-.2-1s.1-.7.2-1V8.1H5.8C5.3 9 5 10 5 11s.3 2 .8 2.9l1.6-1.6z" fill="#FBBC05"/><path d="M10 7.4c.7 0 1.3.2 1.8.7l1.3-1.3C12.3 6 11.2 5.5 10 5.5c-1.8 0-3.4.9-4.2 2.6l1.6 1.2C7.8 8.2 8.8 7.4 10 7.4z" fill="#EA4335"/></svg></a><a class="sw-map-button naver" href="https://map.naver.com/p/search/%EC%8B%9C%EC%98%B7%EC%A7%80%EC%9D%92%20%EB%B6%80%EC%82%B0" target="_blank" aria-label="시옷지읒 네이버맵 열기">N</a></div></div><p class="sw-title-ko">시옷지읒</p><div class="sw-copy"><p>A cozy workshop cafe for tea, weaving, and handmade gemstone accessories.</p><p class="ko">차와 뜨개질, 차를 담은 공예 제품, 원석 악세사리를 만날 수 있는 곳.</p></div><p class="sw-tags">#Tea #Hand made #Shop</p></article></div>
+<div class="slide"><article class="sw-card sw-content" style="--course:#235bac;--course-soft:#dceef8"><div class="sw-photo"><img src="assets/photos/station-deokmi.jpg" alt="덕미 생선구이 장소 사진" onload="this.parentElement.classList.add('loaded')" onerror="this.hidden=true"><span>PLACE PHOTO</span></div><div class="sw-title-row"><h2 class="sw-title">Deokmi Grilled Fish</h2><div class="sw-map-buttons"><a class="sw-map-button google" href="https://www.google.com/maps/search/?api=1&query=Deokmi%20Grilled%20Fish%20Busan" target="_blank" aria-label="덕미 생선구이 구글맵 열기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="white"/><path d="M14.5 10.2c0-.4 0-.7-.1-1H10v1.9h2.5c-.1.6-.5 1.1-1 1.4v1.2h1.6c1-.9 1.4-2.2 1.4-3.5z" fill="#4285F4"/><path d="M10 15c1.2 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.2-.8-2.6-1.9H5.8v1.2C6.6 14.1 8.2 15 10 15z" fill="#34A853"/><path d="M7.4 11.3c-.1-.3-.2-.6-.2-1s.1-.7.2-1V8.1H5.8C5.3 9 5 10 5 11s.3 2 .8 2.9l1.6-1.6z" fill="#FBBC05"/><path d="M10 7.4c.7 0 1.3.2 1.8.7l1.3-1.3C12.3 6 11.2 5.5 10 5.5c-1.8 0-3.4.9-4.2 2.6l1.6 1.2C7.8 8.2 8.8 7.4 10 7.4z" fill="#EA4335"/></svg></a><a class="sw-map-button naver" href="https://map.naver.com/p/search/%EB%8D%95%EB%AF%B8%20%EC%83%9D%EC%84%A0%EA%B5%AC%EC%9D%B4%20%EB%B6%80%EC%82%B0" target="_blank" aria-label="덕미 생선구이 네이버맵 열기">N</a></div></div><p class="sw-title-ko">덕미 생선구이</p><div class="sw-copy"><p>A 20-year fish grill restaurant serving grilled fish and assorted side dishes.</p><p class="ko">20년 내공의 생선구이 성지. 돌솥밥구성 밥상과 다양한 반찬구성.</p></div><p class="sw-tags">#Grilled Fish #Local's pick #Sea food</p></article></div>
+<div class="slide"><article class="sw-card sw-content" style="--course:#235bac;--course-soft:#dceef8"><div class="sw-photo"><img src="assets/photos/station-diguang.jpg" alt="디구앙 장소 사진" onload="this.parentElement.classList.add('loaded')" onerror="this.hidden=true"><span>PLACE PHOTO</span></div><div class="sw-title-row"><h2 class="sw-title">Diguang</h2><div class="sw-map-buttons"><a class="sw-map-button google" href="https://www.google.com/maps/search/?api=1&query=Diguang%20Busan" target="_blank" aria-label="디구앙 구글맵 열기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="white"/><path d="M14.5 10.2c0-.4 0-.7-.1-1H10v1.9h2.5c-.1.6-.5 1.1-1 1.4v1.2h1.6c1-.9 1.4-2.2 1.4-3.5z" fill="#4285F4"/><path d="M10 15c1.2 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.2-.8-2.6-1.9H5.8v1.2C6.6 14.1 8.2 15 10 15z" fill="#34A853"/><path d="M7.4 11.3c-.1-.3-.2-.6-.2-1s.1-.7.2-1V8.1H5.8C5.3 9 5 10 5 11s.3 2 .8 2.9l1.6-1.6z" fill="#FBBC05"/><path d="M10 7.4c.7 0 1.3.2 1.8.7l1.3-1.3C12.3 6 11.2 5.5 10 5.5c-1.8 0-3.4.9-4.2 2.6l1.6 1.2C7.8 8.2 8.8 7.4 10 7.4z" fill="#EA4335"/></svg></a><a class="sw-map-button naver" href="https://map.naver.com/p/search/%EB%94%94%EA%B5%AC%EC%95%99%20%EB%B6%80%EC%82%B0" target="_blank" aria-label="디구앙 네이버맵 열기">N</a></div></div><p class="sw-title-ko">디구앙</p><div class="sw-copy"><p>A little France in Choryang, known for homemade desserts and coffee.</p><p class="ko">초량의 작은 프랑스, 빈티지 공간에서 즐기는 홈메이드 디저트와 커피.</p></div><p class="sw-tags">#French #Dessert #Cafe #Antique</p></article></div>
+<div class="slide"><article class="sw-card sw-content" style="--course:#235bac;--course-soft:#dceef8"><div class="sw-photo"><img src="assets/photos/station-north-port.jpg" alt="북항친수공원 장소 사진" onload="this.parentElement.classList.add('loaded')" onerror="this.hidden=true"><span>PLACE PHOTO</span></div><div class="sw-title-row"><h2 class="sw-title">North Port<br>Waterfront Park</h2><div class="sw-map-buttons"><a class="sw-map-button google" href="https://www.google.com/maps/search/?api=1&query=North%20Port%20Waterfront%20Park%20Busan" target="_blank" aria-label="북항친수공원 구글맵 열기"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="9" fill="white"/><path d="M14.5 10.2c0-.4 0-.7-.1-1H10v1.9h2.5c-.1.6-.5 1.1-1 1.4v1.2h1.6c1-.9 1.4-2.2 1.4-3.5z" fill="#4285F4"/><path d="M10 15c1.2 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.2-.8-2.6-1.9H5.8v1.2C6.6 14.1 8.2 15 10 15z" fill="#34A853"/><path d="M7.4 11.3c-.1-.3-.2-.6-.2-1s.1-.7.2-1V8.1H5.8C5.3 9 5 10 5 11s.3 2 .8 2.9l1.6-1.6z" fill="#FBBC05"/><path d="M10 7.4c.7 0 1.3.2 1.8.7l1.3-1.3C12.3 6 11.2 5.5 10 5.5c-1.8 0-3.4.9-4.2 2.6l1.6 1.2C7.8 8.2 8.8 7.4 10 7.4z" fill="#EA4335"/></svg></a><a class="sw-map-button naver" href="https://map.naver.com/p/search/%EB%B6%81%ED%95%AD%EC%B9%9C%EC%88%98%EA%B3%B5%EC%9B%90%20%EB%B6%80%EC%82%B0" target="_blank" aria-label="북항친수공원 네이버맵 열기">N</a></div></div><p class="sw-title-ko">북항친수공원</p><div class="sw-copy"><p>A night-view spot overlooking the sparkling Busan port.</p><p class="ko">반짝이는 부산항을 감상할 수 있는 부산역 야경맛집</p></div><p class="sw-tags">#Night View #Busan Station</p></article></div>
+      <div class="slide"><article class="sw-card sw-ending" style="--course:#235bac;--course-soft:#dceef8"><h2 class="sw-title">One Lap Around Busan Station</h2><p class="sw-title-ko">초량:부산역 한바퀴</p><div class="sw-actions"><a class="sw-action primary" href="https://www.google.com/maps/dir/?api=1&origin=Choryang+Hwadak+Busan&destination=North+Port+Waterfront+Park+Busan&travelmode=walking&waypoints=Siot-Jieut+Busan%7CDeokmi+Grilled+Fish+Busan%7CDiguang+Busan" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12z" fill="currentColor"/><circle cx="12" cy="9" r="2.4" fill="#fff"/></svg><span><span class="en">Open full route in Google Maps</span><span class="ko">첫 장소부터 마지막 장소까지 보기</span></span></a><button class="sw-action" onclick="saveTourFromClosing(this)" data-route-id="busan-station" data-title-en="One Lap Around Busan Station" data-title-kr="초량:부산역 한바퀴" data-color="#235bac"><svg class="save-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" aria-hidden="true"><path d="M6 4h12v17l-6-4-6 4V4z"/></svg><span><span class="en save-label-en">Save this tour</span><span class="ko save-label-kr">이 투어 저장하기</span></span></button><div class="sw-action-row"><button class="sw-action dim" onclick="shareRouteImage("busan-station")"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><path d="m7 16 3.5-4 2.5 3 2-2.3L18 16"/></svg><span><span class="en">Share image</span><span class="ko">이미지로 코스 공유하기</span></span></button><button class="sw-action dim" onclick="shareRouteLink("One Lap Around Busan Station · 초량:부산역 한바퀴", "https://slowwalker.kr/routes/busan-station")"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1"/><path d="M14 11a5 5 0 0 0-7.1 0l-2 2A5 5 0 0 0 12 20.1l1.1-1.1"/></svg><span><span class="en">Share link</span><span class="ko">링크로 코스 공유하기</span></span></button></div></div></article></div>
+    </div>
+      </div>
+      <div class="progress" id="slideProgress"></div>
+      <button class="nav-prev" id="navPrev">‹</button>
+      <button class="nav-next" id="navNext">›</button>
+      <div class="slide-nav" id="slideNav"></div>
+    </div>
+  </div>
+
+  <!-- ══ 가이드 프로필 ══ -->
+  <div class="screen" id="s-guide-profile">
+    <div style="padding:20px 18px;overflow-y:auto"><div id="guideProfileContent"></div></div>
+  </div>
+
+  <!-- ══ 저장 목록 ══ -->
+  <div class="screen" id="s-saved">
+    <div style="padding:20px 18px;overflow-y:auto">
+      <div style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line)">
+        <div style="font-size:9px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#999;margin-bottom:4px">My Tours</div>
+        <div style="font-size:20px;font-weight:600;color:#1A1A1A">저장한 투어</div>
+      </div>
+      <div id="savedToursList"></div>
+    </div>
+  </div>
+
+  <!-- ══ 프로필 ══ -->
+  <div class="screen" id="s-profile">
+    <div style="padding:20px 18px;overflow-y:auto">
+      <!-- 프로필 카드 -->
+      <div id="profileCard" style="display:none">
+        <div style="text-align:center;padding:20px 0 16px;border-bottom:1px solid var(--line);margin-bottom:16px">
+          <div style="width:56px;height:56px;border-radius:50%;background:#1A1A1A;display:flex;align-items:center;justify-content:center;margin:0 auto 10px">
+            <svg width="26" height="26" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="7.5" r="3.5" stroke="#F6F3EF" stroke-width="1.5"/><path d="M3 19c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="#F6F3EF" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <div id="pc-name" style="font-size:18px;font-weight:600;color:#1A1A1A"></div>
+          <div id="pc-city" style="font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:400;color:#777;margin-top:3px"></div>
+          <div id="pc-insta" style="font-size:11px;color:#999;margin-top:3px"></div>
+        </div>
+        <div id="pc-places-wrap" style="margin-bottom:14px;display:none">
+          <div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:6px">Favourite Places</div>
+          <div id="pc-places" style="font-size:13px;color:#1A1A1A"></div>
+        </div>
+        <div id="pc-themes-wrap" style="margin-bottom:18px;display:none">
+          <div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:8px">Travel Themes</div>
+          <div id="pc-themes" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
+        <button onclick="showProfileEdit()" style="width:100%;padding:11px;background:transparent;border:1.5px solid var(--line);color:#555;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;border-radius:10px">Edit Profile · 수정</button>
+        <button onclick="showSavedTours()" style="width:100%;padding:11px;background:#F2EFE9;border:1.5px solid var(--line);color:#555;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;border-radius:10px">🔖 My Tours · 저장한 투어</button>
+        <button onclick="showScreen('s-register')" style="width:100%;padding:11px;background:#1A1A1A;color:#F6F3EF;border:none;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:10px">Become a Guide · 가이드 등록</button>
+      </div>
+      <!-- 프로필 폼 -->
+      <div id="profileForm">
+        <div style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line)">
+          <div style="font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#999;margin-bottom:4px">My Profile · 내 프로필</div>
+          <div style="font-size:20px;font-weight:600;color:#1A1A1A">Profile Settings</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div><div style="font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:6px">Name · 이름 *</div><input id="profile-name" type="text" placeholder="e.g. Slow Walker" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);background:#F6F3EF;outline:none;font-family:'Work Sans',sans-serif;font-size:13px;color:#1A1A1A;border-radius:10px"></div>
+          <div><div style="font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:6px">My Local City · 내 로컬 지역</div><input id="profile-city" type="text" placeholder="e.g. Busan · 부산" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);background:#F6F3EF;outline:none;font-family:'Work Sans',sans-serif;font-size:13px;color:#1A1A1A;border-radius:10px"></div>
+          <div><div style="font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:6px">Favourite Places · 좋아하는 여행지</div><input id="profile-places" type="text" placeholder="e.g. Berlin, Tokyo, Lisbon" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);background:#F6F3EF;outline:none;font-family:'Work Sans',sans-serif;font-size:13px;color:#1A1A1A;border-radius:10px"></div>
+          <div>
+            <div style="font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:8px">Travel Themes · 여행 테마</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px">
+              <div onclick="toggleTheme(this,'Music')" class="theme-tag">🎷 Music</div>
+              <div onclick="toggleTheme(this,'Beauty')" class="theme-tag">💄 Beauty</div>
+              <div onclick="toggleTheme(this,'Vintage')" class="theme-tag">👗 Vintage</div>
+              <div onclick="toggleTheme(this,'Local Food')" class="theme-tag">🍜 Local Food</div>
+              <div onclick="toggleTheme(this,'Cafe')" class="theme-tag">☕ Cafe</div>
+              <div onclick="toggleTheme(this,'Art & Design')" class="theme-tag">🎨 Art & Design</div>
+              <div onclick="toggleTheme(this,'Night Life')" class="theme-tag">🌙 Night Life</div>
+              <div onclick="toggleTheme(this,'Nature')" class="theme-tag">🌿 Nature</div>
+              <div onclick="toggleTheme(this,'Architecture')" class="theme-tag">🏛 Architecture</div>
+            </div>
+          </div>
+          <div style="background:#F2EFE9;border:1px solid var(--line);padding:12px 14px;border-radius:12px">
+            <div style="font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:6px">Become a Guide · 가이드 등록 (선택)</div>
+            <div style="font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:400;color:#777;margin-bottom:8px">나만의 코스를 공유하고 싶다면 인스타 계정을 연결하세요</div>
+            <div style="display:flex;align-items:center;border:1.5px solid var(--line);background:#F6F3EF;border-radius:10px;overflow:hidden">
+              <span style="padding:0 10px;font-size:12px;color:#999;border-right:1px solid var(--line);height:38px;display:flex;align-items:center">@</span>
+              <input id="profile-insta" type="text" placeholder="instagram_id (선택)" style="flex:1;padding:9px 12px;background:transparent;border:none;outline:none;font-family:'Work Sans',sans-serif;font-size:12px;color:#1A1A1A">
+            </div>
+          </div>
+          <button onclick="saveProfile()" style="width:100%;padding:12px;background:#1A1A1A;color:#F6F3EF;border:none;cursor:pointer;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;border-radius:10px">Save · 저장</button>
+          <div style="font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:400;color:#999;text-align:center;padding-bottom:20px">회원가입 없이 저장됩니다 · No sign-up required</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 가이드 등록 ══ -->
+  <div class="screen" id="s-register">
+    <div style="padding:20px 18px;overflow-y:auto">
+      <div style="margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--line)">
+        <div style="font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#999;margin-bottom:4px">Become a Guide · 가이드 등록</div>
+        <div style="font-size:20px;font-weight:600;color:#1A1A1A">Share your route</div>
+        <div style="font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:400;color:#777;margin-top:2px">당신의 코스를 공유하세요</div>
+      </div>
+      <div style="background:#F2EFE9;border:1px solid var(--line);padding:12px 14px;margin-bottom:16px;border-radius:12px">
+        <div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:6px">Verification · 검증 기준</div>
+        <div style="font-size:12px;color:#555;line-height:1.8">✓ Public Instagram account · 공개 계정<br>✓ At least 1 follower, following, or post<br><span style="font-family:'Noto Sans KR',sans-serif;font-size:11px;color:#999">팔로워, 팔로잉, 게시글 중 하나 이상</span></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div><div style="font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:6px">Instagram ID *</div><div style="display:flex;align-items:center;border:1.5px solid var(--line);background:#F6F3EF;border-radius:10px;overflow:hidden"><span style="padding:0 10px;font-size:13px;color:#999;border-right:1px solid var(--line);height:40px;display:flex;align-items:center">@</span><input id="reg-insta" type="text" placeholder="your_instagram" style="flex:1;padding:10px 12px;background:transparent;border:none;outline:none;font-family:'Work Sans',sans-serif;font-size:13px;color:#1A1A1A"></div></div>
+        <div><div style="font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:6px">Email *</div><input id="reg-email" type="email" placeholder="your@email.com" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);background:#F6F3EF;outline:none;font-family:'Work Sans',sans-serif;font-size:13px;color:#1A1A1A;border-radius:10px"></div>
+        <div><div style="font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:6px">Your City *</div><input id="reg-city" type="text" placeholder="e.g. Busan, Berlin, Tokyo" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);background:#F6F3EF;outline:none;font-family:'Work Sans',sans-serif;font-size:13px;color:#1A1A1A;border-radius:10px"><div style="font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:400;color:#999;margin-top:4px">로컬로 활동하는 도시</div></div>
+        <div><div style="font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:6px">Route idea (선택)</div><textarea id="reg-idea" placeholder="e.g. Jazz bars in Busan..." style="width:100%;padding:10px 12px;border:1.5px solid var(--line);background:#F6F3EF;outline:none;font-family:'Work Sans',sans-serif;font-size:12px;color:#1A1A1A;height:72px;resize:none;border-radius:10px"></textarea></div>
+        <button onclick="submitGuide()" style="width:100%;padding:12px;background:#1A1A1A;color:#F6F3EF;border:none;cursor:pointer;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;border-radius:10px">Apply as Guide · 가이드 신청</button>
+        <div style="font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:400;color:#999;text-align:center;padding-bottom:20px">검토 후 이메일로 연락드릴게요</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const NAV_DATA = {"germany": {"flag": "\ud83c\udde9\ud83c\uddea", "name": "Germany", "name_kr": "\ub3c5\uc77c", "color": "#A02828", "cities": {"berlin": {"name": "Berlin", "name_kr": "\ubca0\ub97c\ub9b0", "color": "#A02828", "courses": [["berlin-korean", "A Korean Day in Berlin", "\ubca0\ub97c\ub9b0\uc5d0\uc11c \ubcf4\ub0b4\ub294 \ucf54\ub9ac\uc548\ub370\uc774", "5 Slides", "Slow Walker"]]}}}, "korea": {"flag": "\ud83c\uddf0\ud83c\uddf7", "name": "Korea", "name_kr": "\ud55c\uad6d", "color": "#2558A8", "cities": {"busan": {"name": "Busan", "name_kr": "\ubd80\uc0b0", "color": "#2558A8", "courses": [["busan-jazz", "Jazz & Bites in Gwangalli", "\uad11\uc548\ub9ac\ub294 \uc7ac\uc988\ub3c4 \uc2dd\ud6c4\uacbd", "5 Slides", "Slow Walker"], ["busan-station", "One Lap Around Busan Station", "\ucd08\ub7c9:\ubd80\uc0b0\uc5ed \ud55c\ubc14\ud034", "6 Slides", "Tae Sung"]]}, "seoul": {"name": "Seoul", "name_kr": "\uc11c\uc6b8", "color": "#5E3A8C", "courses": [["seoul-hannam", "K-Celeb Tour in Hannam", "\ud55c\ub0a8\ub3d9 \uc140\ub7fd \ucf54\uc2a4", "5 Slides", "Seo Woo"]]}}}};
+const navHistory = [];
+let currentSlide = 0;
+let currentSlides = [];
+let currentRouteData = null;
+
+// ── 화면 전환 ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const backBtn = document.getElementById('backBtn');
+  const navLogo = document.getElementById('navLogo');
+  const saveTourNav = document.getElementById('saveTourNav');
+  const likeTourNav = document.getElementById('likeTourNav');
+  const logoBar = document.querySelector('.logo-bar');
+
+  if (id === 's-home') {
+    backBtn.classList.remove('visible');
+    // navLogo hidden
+    saveTourNav.classList.remove('visible');
+    saveTourNav.style.display = 'none';
+    if (likeTourNav) likeTourNav.style.display = 'none';
+    if (logoBar) logoBar.style.background = 'transparent';
+  } else {
+    backBtn.classList.add('visible');
+    // navLogo hidden
+    saveTourNav.classList.toggle('visible', id === 's-slides');
+    saveTourNav.style.display = id === 's-slides' ? 'flex' : 'none';
+    if (likeTourNav) likeTourNav.style.display = id === 's-slides' ? 'flex' : 'none';
+    if (logoBar) logoBar.style.background = 'var(--card)';
+    if (id !== 's-slides') { const g=document.getElementById('googleMapNav'); const nv=document.getElementById('naverMapNav'); if(g) g.style.display='none'; if(nv) nv.style.display='none'; }
+  }
+
+  if (id === 's-profile') {
+    try {
+      const p = JSON.parse(localStorage.getItem('sw_profile'));
+      if (p && p.name) renderProfileCard(p);
+      else showProfileEdit();
+    } catch(e) { showProfileEdit(); }
+  }
+
+  if (id === 's-slides' && currentRouteData) {
+    updateSaveTourNavIcon();
+    updateCourseLike();
+  }
+}
+
+function openProfile() {
+  const current = document.querySelector('.screen.active');
+  if (current && current.id !== 's-profile') navHistory.push(current.id);
+  showScreen('s-profile');
+}
+
+function goBack() {
+  if (!navHistory.length) return;
+  showScreen(navHistory.pop());
+}
+
+// ── 홈 렌더링 ──
+function renderHome() {
+  showAllCountries();
+}
+
+function getSearchItems() {
+  const items = [];
+  Object.entries(NAV_DATA).forEach(([countryId, country]) => {
+    // 나라
+    items.push({
+      type: 'country',
+      id: countryId,
+      flag: country.flag,
+      name: country.name,
+      name_kr: country.name_kr,
+      sub: Object.values(country.cities).map(c=>c.name).join(' · '),
+      color: country.color,
+    });
+    // 도시
+    Object.entries(country.cities).forEach(([cityId, city]) => {
+      items.push({
+        type: 'city',
+        countryId,
+        cityId,
+        flag: country.flag,
+        name: city.name,
+        name_kr: city.name_kr,
+        sub: country.name,
+        color: city.color,
+      });
+      // 코스
+      city.courses.forEach(([routeId, titleEn, titleKr]) => {
+        items.push({
+          type: 'route',
+          countryId,
+          cityId,
+          routeId,
+          flag: '📍',
+          name: titleEn,
+          name_kr: titleKr,
+          sub: city.name + ' · ' + country.name,
+          color: city.color,
+        });
+      });
+    });
+  });
+  return items;
+}
+
+function renderSearchItem(item) {
+  if (item.type === 'country') {
+    return `<div class="sel-card" onclick="selectCountry('${item.id}')" style="padding:14px 16px;display:flex;align-items:center;gap:14px">
+      <span style="font-size:24px">${item.flag}</span>
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:700;color:#1A1A1A">${item.name} <span style="font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:400;color:#999">${item.name_kr}</span></div>
+        <div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#999;margin-top:2px">${item.sub}</div>
+      </div>
+      <span style="color:#999;font-size:14px">→</span>
+      <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:${item.color};border-radius:0 0 14px 14px"></div>
+    </div>`;
+  } else if (item.type === 'city') {
+    return `<div class="sel-card" onclick="selectCity('${item.countryId}','${item.cityId}')" style="padding:14px 16px;display:flex;align-items:center;gap:14px">
+      <span style="font-size:24px">${item.flag}</span>
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:700;color:#1A1A1A">${item.name} <span style="font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:400;color:#999">${item.name_kr}</span></div>
+        <div style="font-size:10px;color:#999;margin-top:2px">${item.sub}</div>
+      </div>
+      <span style="color:#999;font-size:14px">→</span>
+    </div>`;
+  } else {
+    return `<div class="sel-card" onclick="openCourse('${item.routeId}')" style="padding:14px 16px;display:flex;align-items:center;gap:14px">
+      <span style="font-size:18px">${item.flag}</span>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:700;color:#1A1A1A">${item.name}</div>
+        <div style="font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:400;color:#777;margin-top:1px">${item.name_kr}</div>
+        <div style="font-size:10px;color:#999;margin-top:2px">${item.sub}</div>
+      </div>
+      <span style="color:#999;font-size:14px">→</span>
+    </div>`;
+  }
+}
+
+function showAllCountries() {
+  const all = document.getElementById('allCountries');
+  const results = document.getElementById('searchResults');
+  if (!all) return;
+  all.style.display = 'none';
+  if (results) results.style.display = 'none';
+}
+
+function filterCountries(query) {
+  const all = document.getElementById('allCountries');
+  const results = document.getElementById('searchResults');
+  if (!query.trim()) {
+    showAllCountries();
+    return;
+  }
+  const q = query.toLowerCase();
+  // 국가 · 도시 검색
+  const matches = getSearchItems().filter(item =>
+    item.type !== 'route' && (
+      item.name.toLowerCase().includes(q) ||
+      item.name_kr.includes(q) ||
+      (item.sub || '').toLowerCase().includes(q)
+    )
+  );
+  if (all) all.style.display = 'none';
+  if (results) {
+    results.style.display = 'flex';
+    results.innerHTML = matches.length
+      ? matches.map(renderSearchItem).join('')
+      : '<div style="text-align:center;padding:20px;color:#999;font-size:13px">No results · 검색 결과 없음</div>';
+  }
+}
+
+// ── 나라 선택 ──
+function selectCountry(countryId) {
+  navHistory.push('s-home');
+  const country = NAV_DATA[countryId];
+  document.getElementById('countryHeader').innerHTML = `
+    <div style="font-size:22px;margin-bottom:6px">${country.flag}</div>
+    <div style="font-size:20px;font-weight:700;color:#1A1A1A;letter-spacing:-0.5px">${country.name}</div>
+    <div style="font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:400;color:#999;margin-top:2px">${country.name_kr}</div>`;
+  const cityList = document.getElementById('cityList');
+  cityList.innerHTML = '';
+  Object.entries(country.cities).forEach(([cityId, city]) => {
+    cityList.innerHTML += `
+      <div class="sel-card" onclick="selectCity('${countryId}','${cityId}')">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <div style="width:8px;height:8px;border-radius:50%;background:${city.color}"></div>
+          <span style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:${city.color}">${city.name}</span>
+        </div>
+        <div style="font-size:18px;font-weight:700;color:#1A1A1A">${city.name}</div>
+        <div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:400;color:#999">${city.name_kr}</div>
+        <div style="font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#999;margin-top:4px">${city.courses.length} Route${city.courses.length>1?'s':''}</div>
+        <span style="position:absolute;right:16px;top:50%;transform:translateY(-50%);color:#999;font-size:14px">→</span>
+      </div>`;
+  });
+  showScreen('s-country');
+}
+
+// ── 도시 선택 ──
+function selectCity(countryId, cityId) {
+  navHistory.push('s-country');
+  const city = NAV_DATA[countryId].cities[cityId];
+  document.getElementById('cityHeader').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div style="width:18px;height:3px;background:${city.color}"></div>
+      <span style="font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:${city.color}">${city.name}</span>
+      <span style="font-family:'Noto Sans KR',sans-serif;font-size:10px;font-weight:400;color:#999">${city.name_kr}</span>
+    </div>
+    <div style="font-size:22px;font-weight:700;color:#1A1A1A;letter-spacing:-0.5px">Choose a route</div>
+    <div style="font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:400;color:#555;margin-top:2px">코스를 선택하세요</div>`;
+  const routeList = document.getElementById('routeList');
+  routeList.innerHTML = '';
+  city.courses.forEach(([id, titleEn, titleKr, meta, guide]) => {
+    routeList.innerHTML += `
+      <div class="sel-card" onclick="openCourse('${id}')">
+        <div style="font-size:16px;font-weight:700;color:#1A1A1A;letter-spacing:-0.3px;line-height:1.2;margin-bottom:3px">${titleEn}</div>
+        <div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:400;color:#555;margin-bottom:8px">${titleKr}</div>
+        <div style="font-size:10px;color:#999;margin-bottom:8px">${meta}</div>
+        <div style="display:flex;align-items:center;gap:6px;padding-top:8px;border-top:1px solid var(--line)">
+          <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;background:${city.color};color:#fff;border-radius:6px">Guide</div>
+          <div style="font-size:12px;font-weight:500;color:#555">${guide}</div>
+        </div>
+        <div style="position:absolute;right:16px;top:50%;transform:translateY(-50%);color:#999;font-size:14px">→</div>
+      </div>`;
+  });
+  showScreen('s-city');
+}
+
+// ── 코스 열기 ──
+const COURSE_CACHE = {};
+document.querySelectorAll('.course').forEach(course => {
+  COURSE_CACHE[course.dataset.routeId] = course.cloneNode(true);
+});
+function openCourse(routeId) {
+  navHistory.push('s-city');
+  const courseEl = COURSE_CACHE[routeId]?.cloneNode(true);
+  if (!courseEl) return;
+
+  currentRouteData = {
+    id: routeId,
+    title_en: courseEl.dataset.titleEn,
+    title_kr: courseEl.dataset.titleKr,
+    color: courseEl.dataset.color,
+    cityName: courseEl.dataset.city,
+    mapUrl: courseEl.dataset.mapUrl
+  };
+
+  // 슬라이드 수집
+  const track = document.getElementById('slideTrack');
+  const allSlides = Array.from(track.querySelectorAll('.slide'));
+  // 이 코스의 슬라이드만
+  const courseSlides = Array.from(courseEl.querySelectorAll('.slide')).map(slide => slide.cloneNode(true));
+  currentSlides = courseSlides;
+
+  // 모든 슬라이드 숨기고 이 코스만 표시
+  track.innerHTML = '';
+  courseSlides.forEach(s => track.appendChild(s));
+
+  // 진행바
+  const prog = document.getElementById('slideProgress');
+  prog.innerHTML = courseSlides.map((_,i) => `<div class="prog-seg" id="pseg${i}"></div>`).join('');
+
+  // 도트
+  const nav = document.getElementById('slideNav');
+  nav.innerHTML = courseSlides.map((_,i) => `<div class="sdot" onclick="goToSlide(${i})"></div>`).join('');
+
+  // 저장 상태 체크
+  updateSaveTourNavIcon();
+
+  goToSlide(0);
+
+  // 터치
+  let sx = 0;
+  track.addEventListener('touchstart', e => sx = e.touches[0].clientX, {passive:true});
+  track.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - sx;
+    if (Math.abs(dx) > 40) goToSlide(currentSlide + (dx < 0 ? 1 : -1));
+  });
+
+  document.onkeydown = e => {
+    if (e.key === 'ArrowRight') goToSlide(currentSlide + 1);
+    if (e.key === 'ArrowLeft') goToSlide(currentSlide - 1);
+  };
+
+  showScreen('s-slides');
+}
+
+function goToSlide(n) {
+  const total = currentSlides.length;
+  currentSlide = Math.max(0, Math.min(n, total - 1));
+  document.getElementById('slideTrack').style.transform = `translateX(-${currentSlide * 100}%)`;
+  document.querySelectorAll('.sdot').forEach((d,i) => d.classList.toggle('active', i === currentSlide));
+  document.querySelectorAll('.prog-seg').forEach((s,i) => {
+    s.className = 'prog-seg' + (i < currentSlide ? ' done' : i === currentSlide ? ' cur' : '');
+  });
+  updateMapButtons();
+}
+
+function updateMapButtons() {
+  const googleBtn = document.getElementById('googleMapNav');
+  const naverBtn = document.getElementById('naverMapNav');
+  if (!googleBtn || !naverBtn) return;
+
+  // 현재 슬라이드가 스팟 슬라이드인지 확인
+  // 커버(0)와 클로징(마지막)은 숨김
+  const isSpot = currentSlide > 0;
+  googleBtn.style.display = isSpot ? 'flex' : 'none';
+  // 네이버는 한국 코스만 표시
+  const isKorea = currentRouteData && (currentRouteData.id.startsWith('seoul') || currentRouteData.id.startsWith('busan'));
+  naverBtn.style.display = (isSpot && isKorea) ? 'flex' : 'none';
+
+  if (!isSpot || !currentRouteData) return;
+
+  // 현재 슬라이드에서 장소 이름 추출
+  // img alt가 없으니 코스+인덱스로 매핑
+  const spotIndex = currentSlide - 1; // 커버 제외
+  const spotMaps = {
+    'seoul-hannam': [
+      ['Dongah Naengmyeon', 'Hannam-dong Seoul', '동아냉면', '한남동'],
+      ["L'amie", 'Hannam-dong Seoul', '라미', '한남동'],
+      ['Tamburins', 'Hannam-dong Seoul', '탬버린즈', '한남동'],
+      ['Hannamdong Gamjatang', 'Hannam-dong Seoul', '한남동감자탕', '한남동'],
+    ],
+    'berlin-korean': [
+      ['Schim Pause Cafe', 'Prenzlauer Berg Berlin', '쉼파우제 카페', '베를린'],
+      ['KEAUTI', 'Rosenthaler Platz Berlin', '키오티', '베를린'],
+      ['KOKIO', 'Berlin Germany', '꼬끼오', '베를린'],
+      ['SORI KONO', 'Berlin Germany', '소리코노', '베를린'],
+    ],
+    'busan-jazz': [
+      ['Anmok', 'Gwangalli Busan', '안목', '광안리 부산'],
+      ['Namcheon Patbingsu', 'Namcheon-dong Busan', '남천팥빙수', '남천동 부산'],
+      ['Phil Records', 'Busan', '필레코드', '부산'],
+      ['Jazzpresso', 'Busan', '재즈프레소', '부산'],
+    ],
+    'busan-station': [
+      ['Choryang Hwadak', 'Choryang Busan', '초량화닥', '초량 부산'],
+      ['Siot-Jieut', 'Choryang Busan', '시옷지읒', '초량 부산'],
+      ['Deokmi Grilled Fish', 'Choryang Busan', '덕미생선구이', '초량 부산'],
+      ['Diguang', 'Choryang Busan', '디구앙', '초량 부산'],
+      ['North Port Waterfront Park', 'Busan Station', '북항친수공원', '부산역'],
+    ],
+  };
+
+  const spots = spotMaps[currentRouteData.id];
+  if (!spots || spotIndex >= spots.length) return;
+
+  const [nameEn, locationEn, nameKr, locationKr] = spots[spotIndex];
+  googleBtn.href = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(nameEn + ' ' + locationEn)}`;
+  naverBtn.href = `https://map.naver.com/p/search/${encodeURIComponent(nameKr + ' ' + locationKr)}`;
+}
+
+document.getElementById('navPrev').onclick = () => goToSlide(currentSlide - 1);
+document.getElementById('navNext').onclick = () => goToSlide(currentSlide + 1);
+
+// ── 코스 좋아요 (백엔드 연결 전 임시 localStorage) ──
+const COURSE_LIKE_BASE = {'seoul-hannam':128,'berlin-korean':94,'busan-jazz':156,'busan-station':73};
+function getLikedRoutes() {
+  try { return JSON.parse(localStorage.getItem('sw_liked_routes') || '[]'); }
+  catch(e) { return []; }
+}
+function updateCourseLike() {
+  if (!currentRouteData) return;
+  const button = document.getElementById('likeTourNav');
+  const count = document.getElementById('likeCount');
+  const liked = getLikedRoutes().includes(currentRouteData.id);
+  if (button) button.classList.toggle('liked', liked);
+  if (button) button.setAttribute('aria-pressed', liked ? 'true' : 'false');
+  if (count) count.textContent = (COURSE_LIKE_BASE[currentRouteData.id] || 0) + (liked ? 1 : 0);
+}
+function toggleCourseLike() {
+  if (!currentRouteData) return;
+  const likedRoutes = getLikedRoutes();
+  const index = likedRoutes.indexOf(currentRouteData.id);
+  if (index >= 0) likedRoutes.splice(index, 1); else likedRoutes.push(currentRouteData.id);
+  localStorage.setItem('sw_liked_routes', JSON.stringify(likedRoutes));
+  updateCourseLike();
+  showToast(index >= 0 ? '좋아요를 취소했어요' : '이 코스가 마음에 들어요 ♥');
+}
+
+// ── 투어 저장 ──
+function updateSaveTourNavIcon() {
+  if (!currentRouteData) return;
+  const saved = JSON.parse(localStorage.getItem('sw_saved_tours') || '[]');
+  const isSaved = saved.find(t => t.id === currentRouteData.id);
+  const icon = document.getElementById('saveTourNavIcon');
+  if (icon) icon.setAttribute('fill', isSaved ? '#1A1A1A' : 'none');
+}
+
+function saveTourFromNav() {
+  if (!currentRouteData) return;
+  toggleSaveTour(currentRouteData);
+  updateSaveTourNavIcon();
+}
+
+function saveTourFromClosing(btn) {
+  const data = {
+    id: btn.dataset.routeId,
+    title_en: btn.dataset.titleEn,
+    title_kr: btn.dataset.titleKr,
+    color: btn.dataset.color,
+    cityName: ''
+  };
+  const wasSaved = toggleSaveTour(data);
+  const icon = btn.querySelector('.save-icon');
+  const labelEn = btn.querySelector('.save-label-en');
+  const labelKr = btn.querySelector('.save-label-kr');
+  if (!wasSaved) {
+    if (icon) icon.setAttribute('fill', '#1A1A1A');
+    if (labelEn) labelEn.textContent = 'Saved ✓';
+    if (labelKr) labelKr.textContent = '저장됨';
+  } else {
+    if (icon) icon.setAttribute('fill', 'none');
+    if (labelEn) labelEn.textContent = 'Save this tour';
+    if (labelKr) labelKr.textContent = '이 투어 저장하기';
+  }
+  updateSaveTourNavIcon();
+}
+
+function toggleSaveTour(data) {
+  const key = 'sw_saved_tours';
+  const saved = JSON.parse(localStorage.getItem(key) || '[]');
+  const exists = saved.find(t => t.id === data.id);
+  if (exists) {
+    localStorage.setItem(key, JSON.stringify(saved.filter(t => t.id !== data.id)));
+    showToast('저장 취소됨 · Tour removed');
+    return true; // was saved
+  } else {
+    saved.push({ ...data, savedAt: Date.now() });
+    localStorage.setItem(key, JSON.stringify(saved));
+    showToast('투어 저장됐어요 · Tour saved!');
+    return false; // was not saved
+  }
+}
+
+function showSavedTours() {
+  navHistory.push('s-profile');
+  const saved = JSON.parse(localStorage.getItem('sw_saved_tours') || '[]');
+  const list = document.getElementById('savedToursList');
+  if (!saved.length) {
+    list.innerHTML = '<div style="text-align:center;padding:32px 0;color:#999;font-size:13px">저장한 투어가 없어요<br><span style="font-family:Noto Sans KR,sans-serif;font-size:11px">코스 보다가 🔖 눌러서 저장하세요</span></div>';
+  } else {
+    list.innerHTML = saved.map(t => `
+      <div onclick="openCourse('${t.id}')" style="background:#F2EFE9;border:1px solid #D8D4CE;border-radius:12px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+        <div>
+          <div style="font-size:14px;font-weight:600;color:#1A1A1A">${t.title_en}</div>
+          <div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:400;color:#777;margin-top:2px">${t.title_kr}</div>
+          <div style="display:inline-block;font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;background:${t.color}18;color:${t.color};margin-top:6px;border-radius:6px">${t.cityName || ''}</div>
+        </div>
+        <span style="color:#999;font-size:14px;flex-shrink:0;margin-left:8px">→</span>
+      </div>`).join('');
+  }
+  showScreen('s-saved');
+}
+
+// ── 공유 ──
+const SW_ROUTE_SHARE_DATA = {"seoul-hannam":{"id":"seoul-hannam","title":"K-Celeb Tour in Hannam","titleKr":"한남동 셀럽 코스","cityLabel":"Seoul, Korea","color":"#742583","soft":"#e6ddf4","url":"https://slowwalker.kr/routes/seoul-hannam","spots":[{"name":"Dongah Naengmyeon","nameKr":"동아냉면"},{"name":"L'amie","nameKr":"라미"},{"name":"Tamburins","nameKr":"탬버린즈"},{"name":"Hannamdong Gamjatang","nameKr":"한남동 감자탕"}]},"berlin-korean":{"id":"berlin-korean","title":"A Korean Day in Berlin","titleKr":"베를린에서 보내는 코리안데이","cityLabel":"Berlin, Germany","color":"#bd1119","soft":"#f1dfe2","url":"https://slowwalker.kr/routes/berlin-korean","spots":[{"name":"Schim:Pause","nameKr":"쉼 : 파우제"},{"name":"KEAUTI","nameKr":"큐티"},{"name":"KOKIO","nameKr":"꼬끼오"},{"name":"SORI KONO","nameKr":"소리 코노"}]},"busan-jazz":{"id":"busan-jazz","title":"Jazz & Bites in Gwangalli","titleKr":"광안리는 재즈도 식후경","cityLabel":"Busan, Korea","color":"#235bac","soft":"#dceef8","url":"https://slowwalker.kr/routes/busan-jazz","spots":[{"name":"Anmok","nameKr":"안목"},{"name":"Namcheon Patbingsu","nameKr":"남천 팥빙수"},{"name":"Phil Records","nameKr":"필 레코드"},{"name":"Jazzpresso","nameKr":"재즈프레소"}]},"busan-station":{"id":"busan-station","title":"One Lap Around Busan Station","titleKr":"초량:부산역 한바퀴","cityLabel":"Busan, Korea","color":"#235bac","soft":"#dceef8","url":"https://slowwalker.kr/routes/busan-station","spots":[{"name":"Choryang Hwadak","nameKr":"초량화닥"},{"name":"Siot-Jieut","nameKr":"시옷지읒"},{"name":"Deokmi Grilled Fish","nameKr":"덕미 생선구이"},{"name":"Diguang","nameKr":"디구앙"},{"name":"North Port Waterfront Park","nameKr":"북항친수공원"}]}};
+
+function roundedRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 3) {
+  const words = String(text).split(/\s+/);
+  const lines = [];
+  let line = '';
+  words.forEach(word => {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  });
+  if (line) lines.push(line);
+  lines.slice(0, maxLines).forEach((l, i) => ctx.fillText(l, x, y + i * lineHeight));
+  return y + Math.min(lines.length, maxLines) * lineHeight;
+}
+
+function createRouteShareBlob(routeId) {
+  return new Promise(resolve => {
+    const data = SW_ROUTE_SHARE_DATA[routeId];
+    const canvas = document.createElement('canvas');
+    canvas.width = 1200;
+    canvas.height = 900;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#F6F3EF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = data.soft || '#EFE8DD';
+    roundedRect(ctx, 70, 70, 1060, 760, 42);
+    ctx.fill();
+    ctx.fillStyle = data.color;
+    roundedRect(ctx, 70, 70, 18, 760, 9);
+    ctx.fill();
+    ctx.fillStyle = '#1A1A1A';
+    ctx.font = '700 64px Work Sans, Arial, sans-serif';
+    wrapCanvasText(ctx, data.title, 135, 170, 890, 70, 2);
+    ctx.fillStyle = '#777';
+    ctx.font = '500 34px Noto Sans KR, Arial, sans-serif';
+    ctx.fillText(data.titleKr, 135, 275);
+    ctx.fillStyle = data.color;
+    ctx.font = '700 24px Work Sans, Arial, sans-serif';
+    ctx.fillText(data.cityLabel + ' · ' + data.spots.length + ' Spots', 135, 345);
+    ctx.strokeStyle = 'rgba(26,26,26,.16)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(135, 385);
+    ctx.lineTo(1030, 385);
+    ctx.stroke();
+    let y = 455;
+    data.spots.forEach((spot, index) => {
+      ctx.fillStyle = data.color;
+      ctx.beginPath();
+      ctx.arc(150, y - 9, 13, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = '700 17px Work Sans, Arial, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(String(index + 1), 150, y - 3);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#1A1A1A';
+      ctx.font = '700 32px Work Sans, Arial, sans-serif';
+      ctx.fillText(spot.name, 190, y);
+      ctx.fillStyle = '#888';
+      ctx.font = '500 23px Noto Sans KR, Arial, sans-serif';
+      ctx.fillText(spot.nameKr, 190, y + 34);
+      y += 82;
+    });
+    ctx.fillStyle = '#A7A19A';
+    ctx.font = '600 22px Work Sans, Arial, sans-serif';
+    ctx.fillText(data.url, 135, 800);
+    canvas.toBlob(blob => resolve(blob), 'image/png', 0.95);
+  });
+}
+
+async function shareRouteImage(routeId) {
+  const data = SW_ROUTE_SHARE_DATA[routeId];
+  if (!data) return;
+  const blob = await createRouteShareBlob(routeId);
+  const file = new File([blob], data.id + '-slow-walker-route.png', { type: 'image/png' });
+  if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+    try {
+      await navigator.share({ title: data.title, text: data.titleKr, files: [file] });
+      return;
+    } catch(e) {}
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = file.name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('이미지 저장됨 · Image saved');
+}
+
+async function shareRouteLink(title, url) {
+  if (navigator.share) {
+    try { await navigator.share({ title, text: title, url }); return; } catch(e) {}
+  }
+  try { await navigator.clipboard.writeText(url); showToast('링크 복사됨 · Link copied!'); }
+  catch(e) { showToast(url); }
+}
+
+async function shareRoute(title, url) {
+  if (navigator.share) {
+    try { await navigator.share({title, url}); } catch(e) {}
+  } else {
+    try { await navigator.clipboard.writeText(url); showToast('링크 복사됨 · Link copied!'); }
+    catch(e) { showToast('slowwalker.kr'); }
+  }
+}
+
+// ── 프로필 ──
+function renderProfileCard(p) {
+  document.getElementById('profileCard').style.display = 'block';
+  document.getElementById('profileForm').style.display = 'none';
+  const n = document.getElementById('pc-name'); if(n) n.textContent = p.name||'';
+  const c = document.getElementById('pc-city'); if(c) c.textContent = p.city ? '📍 '+p.city : '';
+  const ig = document.getElementById('pc-insta'); if(ig) ig.textContent = p.insta ? '@'+p.insta : '';
+  const pl = document.getElementById('pc-places');
+  const pw = document.getElementById('pc-places-wrap');
+  if(pl && p.places) { pl.textContent = p.places; if(pw) pw.style.display='block'; }
+  const th = document.getElementById('pc-themes');
+  const tw = document.getElementById('pc-themes-wrap');
+  if(th && p.themes && p.themes.length) {
+    th.innerHTML = p.themes.map(t=>`<span style="font-size:10px;font-weight:500;padding:4px 10px;background:#1A1A1A;color:#F6F3EF;border-radius:20px">${t}</span>`).join('');
+    if(tw) tw.style.display='block';
+  }
+}
+
+function showProfileEdit() {
+  document.getElementById('profileCard').style.display = 'none';
+  document.getElementById('profileForm').style.display = 'block';
+  loadProfile();
+}
+
+function loadProfile() {
+  try {
+    const p = JSON.parse(localStorage.getItem('sw_profile'));
+    if (!p) return;
+    ['name','city','places','insta'].forEach(k => {
+      const el = document.getElementById('profile-'+k);
+      if(el && p[k]) el.value = p[k];
+    });
+    if(p.themes) document.querySelectorAll('.theme-tag').forEach(t => {
+      if(p.themes.includes(t.textContent)) t.classList.add('selected');
+    });
+  } catch(e) {}
+}
+
+function toggleTheme(el) { el.classList.toggle('selected'); }
+
+async function saveProfile() {
+  const name = document.getElementById('profile-name')?.value.trim();
+  if (!name) { showToast('이름을 입력해주세요'); return; }
+  const city = document.getElementById('profile-city')?.value.trim()||'';
+  const places = document.getElementById('profile-places')?.value.trim()||'';
+  const insta = document.getElementById('profile-insta')?.value.trim()||'';
+  const themes = Array.from(document.querySelectorAll('.theme-tag.selected')).map(t=>t.textContent);
+  try { localStorage.setItem('sw_profile', JSON.stringify({name,city,places,insta,themes})); } catch(e) {}
+  if (insta) {
+    try {
+      showToast('신청 중... · Sending...');
+      const res = await fetch('https://formspree.io/f/mojzkkdb', {
+        method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'},
+        body: JSON.stringify({_subject:'[Slow Walker] 가이드 신청 - @'+insta, name, instagram:'@'+insta, city, places, themes:themes.join(', ')})
+      });
+      if(res.ok) { showToast('가이드 신청 완료 · Sent!'); }
+      else showToast('오류 · Error');
+    } catch(e) { showToast('오류 · Error'); }
+  } else {
+    showToast('저장됐어요 · Saved!');
+    try { const p = JSON.parse(localStorage.getItem('sw_profile')); if(p) renderProfileCard(p); } catch(e) {}
+    document.getElementById('profileCard').style.display='block';
+    document.getElementById('profileForm').style.display='none';
+  }
+}
+
+// ── 가이드 등록 ──
+async function submitGuide() {
+  const insta = document.getElementById('reg-insta')?.value.trim();
+  const email = document.getElementById('reg-email')?.value.trim();
+  const city = document.getElementById('reg-city')?.value.trim();
+  if(!insta||!email||!city) { showToast('필수 항목을 입력해주세요'); return; }
+  if(!email.includes('@')) { showToast('이메일을 확인해주세요'); return; }
+  const idea = document.getElementById('reg-idea')?.value.trim()||'';
+  try {
+    showToast('신청 중...');
+    const res = await fetch('https://formspree.io/f/mojzkkdb', {
+      method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'},
+      body: JSON.stringify({_subject:'[Slow Walker] 가이드 등록 - @'+insta, instagram:'@'+insta, email, city, idea})
+    });
+    if(res.ok) { showToast('신청 완료 · Application sent!'); setTimeout(()=>goBack(),1500); }
+    else showToast('오류 · Error');
+  } catch(e) { showToast('오류 · Error'); }
+}
+
+// ── 토스트 ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ── 초기화 ──
+renderHome();
+setTimeout(loadProfile, 200);
+</script>
+</body>
+</html>
