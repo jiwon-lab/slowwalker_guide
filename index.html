@@ -291,6 +291,7 @@
     <div style="padding:20px 18px;overflow-y:auto">
       <!-- 프로필 카드 -->
       <div id="profileCard" style="display:none">
+        <div id="authInfo" style="display:none"></div>
         <div style="text-align:center;padding:20px 0 16px;border-bottom:1px solid var(--line);margin-bottom:16px">
           <div style="width:56px;height:56px;border-radius:50%;background:#1A1A1A;display:flex;align-items:center;justify-content:center;margin:0 auto 10px">
             <svg width="26" height="26" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="7.5" r="3.5" stroke="#F6F3EF" stroke-width="1.5"/><path d="M3 19c0-4.418 3.582-8 8-8s8 3.582 8 8" stroke="#F6F3EF" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -309,7 +310,8 @@
         </div>
         <button onclick="showProfileEdit()" style="width:100%;padding:11px;background:transparent;border:1.5px solid var(--line);color:#555;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;border-radius:10px">Edit Profile · 수정</button>
         <button onclick="showSavedTours()" style="width:100%;padding:11px;background:#F2EFE9;border:1.5px solid var(--line);color:#555;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;border-radius:10px">🔖 My Tours · 저장한 투어</button>
-        <button onclick="showScreen('s-register')" style="width:100%;padding:11px;background:#1A1A1A;color:#F6F3EF;border:none;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:10px">Become a Guide · 가이드 등록</button>
+        <button onclick="showScreen('s-register')" style="width:100%;padding:11px;background:#1A1A1A;color:#F6F3EF;border:none;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;border-radius:10px">Become a Guide · 가이드 등록</button>
+        <button id="logoutBtn" onclick="signOut()" style="display:none;width:100%;padding:11px;background:transparent;border:1.5px solid var(--line);color:#999;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:10px">Log Out · 로그아웃</button>
       </div>
       <!-- 프로필 폼 -->
       <div id="profileForm">
@@ -317,6 +319,7 @@
           <div style="font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#999;margin-bottom:4px">My Profile · 내 프로필</div>
           <div style="font-size:20px;font-weight:600;color:#1A1A1A">Profile Settings</div>
         </div>
+        <button id="googleLoginBtn" onclick="signInWithGoogle()" style="width:100%;padding:12px;background:#fff;border:1.5px solid var(--line);color:#1A1A1A;font-family:'Work Sans',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;cursor:pointer;margin-bottom:16px;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/><path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.55 0 9s.348 2.825.957 4.039l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>Google로 로그인</button>
         <div style="display:flex;flex-direction:column;gap:14px">
           <div><div style="font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:6px">Name · 이름 *</div><input id="profile-name" type="text" placeholder="e.g. Slow Walker" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);background:#F6F3EF;outline:none;font-family:'Work Sans',sans-serif;font-size:13px;color:#1A1A1A;border-radius:10px"></div>
           <div><div style="font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:6px">My Local City · 내 로컬 지역</div><input id="profile-city" type="text" placeholder="e.g. Busan · 부산" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);background:#F6F3EF;outline:none;font-family:'Work Sans',sans-serif;font-size:13px;color:#1A1A1A;border-radius:10px"></div>
@@ -383,10 +386,51 @@ const db = window.supabase.createClient(
   'https://aolfarxkwccphaigddsd.supabase.co',
   'sb_publishable_RnPKLcoKUrbFIWAv1yzX9A_Mjxi4AzC'
 );
+
+let _authUser = null;
+
+db.auth.getSession().then(({ data: { session } }) => {
+  _authUser = session?.user || null;
+  renderAuthState();
+});
+db.auth.onAuthStateChange((_e, session) => {
+  _authUser = session?.user || null;
+  renderAuthState();
+});
+
 function getUserId() {
+  if (_authUser) return _authUser.id;
   let id = localStorage.getItem('sw_user_id');
   if (!id) { id = crypto.randomUUID(); localStorage.setItem('sw_user_id', id); }
   return id;
+}
+
+function signInWithGoogle() {
+  db.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+}
+
+function signOut() {
+  db.auth.signOut().then(() => { _authUser = null; renderAuthState(); showToast('로그아웃됐어요'); });
+}
+
+function renderAuthState() {
+  const loginBtn = document.getElementById('googleLoginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const authInfo = document.getElementById('authInfo');
+  if (!loginBtn) return;
+  if (_authUser) {
+    loginBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'block';
+    if (authInfo) {
+      const m = _authUser.user_metadata;
+      authInfo.innerHTML = `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#F2EFE9;border:1px solid var(--line);border-radius:12px;margin-bottom:14px">${m.avatar_url?`<img src="${m.avatar_url}" style="width:36px;height:36px;border-radius:50%;object-fit:cover">`:'<div style="width:36px;height:36px;border-radius:50%;background:#1A1A1A"></div>'}<div><div style="font-size:13px;font-weight:600;color:#1A1A1A">${m.full_name||''}</div><div style="font-size:11px;color:#999">${_authUser.email||''}</div></div></div>`;
+      authInfo.style.display = 'block';
+    }
+  } else {
+    loginBtn.style.display = 'block';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+    if (authInfo) authInfo.style.display = 'none';
+  }
 }
 
 const NAV_DATA = {"germany": {"flag": "\ud83c\udde9\ud83c\uddea", "name": "Germany", "name_kr": "\ub3c5\uc77c", "color": "#A02828", "cities": {"berlin": {"name": "Berlin", "name_kr": "\ubca0\ub97c\ub9b0", "color": "#A02828", "courses": [["berlin-korean", "A Korean Day in Berlin", "\ubca0\ub97c\ub9b0\uc5d0\uc11c \ubcf4\ub0b4\ub294 \ucf54\ub9ac\uc548\ub370\uc774", "5 Slides", "Slow Walker"]]}}}, "korea": {"flag": "\ud83c\uddf0\ud83c\uddf7", "name": "Korea", "name_kr": "\ud55c\uad6d", "color": "#2558A8", "cities": {"busan": {"name": "Busan", "name_kr": "\ubd80\uc0b0", "color": "#2558A8", "courses": [["busan-jazz", "Jazz & Bites in Gwangalli", "\uad11\uc548\ub9ac\ub294 \uc7ac\uc988\ub3c4 \uc2dd\ud6c4\uacbd", "5 Slides", "Slow Walker"], ["busan-station", "One Lap Around Busan Station", "\ucd08\ub7c9:\ubd80\uc0b0\uc5ed \ud55c\ubc14\ud034", "6 Slides", "Tae Sung"]]}, "seoul": {"name": "Seoul", "name_kr": "\uc11c\uc6b8", "color": "#5E3A8C", "courses": [["seoul-hannam", "K-Celeb Tour in Hannam", "\ud55c\ub0a8\ub3d9 \uc140\ub7fd \ucf54\uc2a4", "5 Slides", "Seo Woo"]]}}}};
