@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+<!-- Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-T5TXSERYGR"></script>
 <script>
@@ -376,6 +378,17 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// ── Supabase ──
+const db = window.supabase.createClient(
+  'https://aolfarxkwccphaigddsd.supabase.co',
+  'sb_publishable_RnPKLcoKUrbFIWAv1yzX9A_Mjxi4AzC'
+);
+function getUserId() {
+  let id = localStorage.getItem('sw_user_id');
+  if (!id) { id = crypto.randomUUID(); localStorage.setItem('sw_user_id', id); }
+  return id;
+}
+
 const NAV_DATA = {"germany": {"flag": "\ud83c\udde9\ud83c\uddea", "name": "Germany", "name_kr": "\ub3c5\uc77c", "color": "#A02828", "cities": {"berlin": {"name": "Berlin", "name_kr": "\ubca0\ub97c\ub9b0", "color": "#A02828", "courses": [["berlin-korean", "A Korean Day in Berlin", "\ubca0\ub97c\ub9b0\uc5d0\uc11c \ubcf4\ub0b4\ub294 \ucf54\ub9ac\uc548\ub370\uc774", "5 Slides", "Slow Walker"]]}}}, "korea": {"flag": "\ud83c\uddf0\ud83c\uddf7", "name": "Korea", "name_kr": "\ud55c\uad6d", "color": "#2558A8", "cities": {"busan": {"name": "Busan", "name_kr": "\ubd80\uc0b0", "color": "#2558A8", "courses": [["busan-jazz", "Jazz & Bites in Gwangalli", "\uad11\uc548\ub9ac\ub294 \uc7ac\uc988\ub3c4 \uc2dd\ud6c4\uacbd", "5 Slides", "Slow Walker"], ["busan-station", "One Lap Around Busan Station", "\ucd08\ub7c9:\ubd80\uc0b0\uc5ed \ud55c\ubc14\ud034", "6 Slides", "Tae Sung"]]}, "seoul": {"name": "Seoul", "name_kr": "\uc11c\uc6b8", "color": "#5E3A8C", "courses": [["seoul-hannam", "K-Celeb Tour in Hannam", "\ud55c\ub0a8\ub3d9 \uc140\ub7fd \ucf54\uc2a4", "5 Slides", "Seo Woo"]]}}}};
 const navHistory = [];
 let currentSlide = 0;
@@ -410,11 +423,15 @@ function showScreen(id) {
   }
 
   if (id === 's-profile') {
-    try {
-      const p = JSON.parse(localStorage.getItem('sw_profile'));
-      if (p && p.name) renderProfileCard(p);
-      else showProfileEdit();
-    } catch(e) { showProfileEdit(); }
+    const cached = (() => { try { return JSON.parse(localStorage.getItem('sw_profile')); } catch(e) { return null; } })();
+    if (cached && cached.name) renderProfileCard(cached);
+    else showProfileEdit();
+    db.from('profiles').select('*').eq('id', getUserId()).single().then(({ data }) => {
+      if (!data) return;
+      const p = { name: data.name, city: data.city, places: data.places, insta: data.instagram, themes: data.themes || [] };
+      try { localStorage.setItem('sw_profile', JSON.stringify(p)); } catch(e) {}
+      if (p.name) renderProfileCard(p);
+    });
   }
 
   if (id === 's-slides' && currentRouteData) {
@@ -732,29 +749,42 @@ function updateMapButtons() {
 document.getElementById('navPrev').onclick = () => goToSlide(currentSlide - 1);
 document.getElementById('navNext').onclick = () => goToSlide(currentSlide + 1);
 
-// ── 코스 좋아요 (백엔드 연결 전 임시 localStorage) ──
+// ── 코스 좋아요 ──
 const COURSE_LIKE_BASE = {'seoul-hannam':128,'berlin-korean':94,'busan-jazz':156,'busan-station':73};
 function getLikedRoutes() {
   try { return JSON.parse(localStorage.getItem('sw_liked_routes') || '[]'); }
   catch(e) { return []; }
 }
-function updateCourseLike() {
+async function updateCourseLike() {
   if (!currentRouteData) return;
+  const rid = currentRouteData.id;
   const button = document.getElementById('likeTourNav');
   const count = document.getElementById('likeCount');
-  const liked = getLikedRoutes().includes(currentRouteData.id);
+  const liked = getLikedRoutes().includes(rid);
   if (button) button.classList.toggle('liked', liked);
   if (button) button.setAttribute('aria-pressed', liked ? 'true' : 'false');
-  if (count) count.textContent = (COURSE_LIKE_BASE[currentRouteData.id] || 0) + (liked ? 1 : 0);
+  if (count) count.textContent = (COURSE_LIKE_BASE[rid] || 0) + (liked ? 1 : 0);
+  try {
+    const { count: c } = await db.from('course_likes').select('*', { count: 'exact', head: true }).eq('route_id', rid);
+    if (count && c !== null) count.textContent = (COURSE_LIKE_BASE[rid] || 0) + c;
+  } catch(e) {}
 }
-function toggleCourseLike() {
+async function toggleCourseLike() {
   if (!currentRouteData) return;
+  const rid = currentRouteData.id;
   const likedRoutes = getLikedRoutes();
-  const index = likedRoutes.indexOf(currentRouteData.id);
-  if (index >= 0) likedRoutes.splice(index, 1); else likedRoutes.push(currentRouteData.id);
+  const index = likedRoutes.indexOf(rid);
+  if (index >= 0) {
+    likedRoutes.splice(index, 1);
+    db.from('course_likes').delete().eq('profile_id', getUserId()).eq('route_id', rid).then(()=>{});
+    showToast('좋아요를 취소했어요');
+  } else {
+    likedRoutes.push(rid);
+    db.from('course_likes').upsert({ profile_id: getUserId(), route_id: rid }).then(()=>{});
+    showToast('이 코스가 마음에 들어요 ♥');
+  }
   localStorage.setItem('sw_liked_routes', JSON.stringify(likedRoutes));
   updateCourseLike();
-  showToast(index >= 0 ? '좋아요를 취소했어요' : '이 코스가 마음에 들어요 ♥');
 }
 
 // ── 투어 저장 ──
@@ -802,34 +832,46 @@ function toggleSaveTour(data) {
   const exists = saved.find(t => t.id === data.id);
   if (exists) {
     localStorage.setItem(key, JSON.stringify(saved.filter(t => t.id !== data.id)));
+    db.from('saved_tours').delete().eq('profile_id', getUserId()).eq('route_id', data.id).then(()=>{});
     showToast('저장 취소됨 · Tour removed');
-    return true; // was saved
+    return true;
   } else {
     saved.push({ ...data, savedAt: Date.now() });
     localStorage.setItem(key, JSON.stringify(saved));
+    db.from('saved_tours').upsert({ profile_id: getUserId(), route_id: data.id, title_en: data.title_en, title_kr: data.title_kr, color: data.color, city_name: data.cityName }).then(()=>{});
     showToast('투어 저장됐어요 · Tour saved!');
-    return false; // was not saved
+    return false;
   }
 }
 
-function showSavedTours() {
+async function showSavedTours() {
   navHistory.push('s-profile');
-  const saved = JSON.parse(localStorage.getItem('sw_saved_tours') || '[]');
   const list = document.getElementById('savedToursList');
-  if (!saved.length) {
+  list.innerHTML = '<div style="text-align:center;padding:32px 0;color:#999;font-size:13px">불러오는 중...</div>';
+  showScreen('s-saved');
+  let tours = [];
+  try {
+    const { data } = await db.from('saved_tours').select('*').eq('profile_id', getUserId()).order('saved_at', { ascending: false });
+    if (data && data.length) {
+      tours = data;
+      try { localStorage.setItem('sw_saved_tours', JSON.stringify(data.map(t => ({ id: t.route_id, title_en: t.title_en, title_kr: t.title_kr, color: t.color, cityName: t.city_name })))); } catch(e) {}
+    }
+  } catch(e) {
+    try { tours = JSON.parse(localStorage.getItem('sw_saved_tours') || '[]').map(t => ({ route_id: t.id, title_en: t.title_en, title_kr: t.title_kr, color: t.color, city_name: t.cityName })); } catch(e2) {}
+  }
+  if (!tours.length) {
     list.innerHTML = '<div style="text-align:center;padding:32px 0;color:#999;font-size:13px">저장한 투어가 없어요<br><span style="font-family:Noto Sans KR,sans-serif;font-size:11px">코스 보다가 🔖 눌러서 저장하세요</span></div>';
   } else {
-    list.innerHTML = saved.map(t => `
-      <div onclick="openCourse('${t.id}')" style="background:#F2EFE9;border:1px solid #D8D4CE;border-radius:12px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+    list.innerHTML = tours.map(t => `
+      <div onclick="openCourse('${t.route_id||t.id}')" style="background:#F2EFE9;border:1px solid #D8D4CE;border-radius:12px;padding:14px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
         <div>
           <div style="font-size:14px;font-weight:600;color:#1A1A1A">${t.title_en}</div>
           <div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:400;color:#777;margin-top:2px">${t.title_kr}</div>
-          <div style="display:inline-block;font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;background:${t.color}18;color:${t.color};margin-top:6px;border-radius:6px">${t.cityName || ''}</div>
+          <div style="display:inline-block;font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;background:${t.color}18;color:${t.color};margin-top:6px;border-radius:6px">${t.city_name||t.cityName||''}</div>
         </div>
         <span style="color:#999;font-size:14px;flex-shrink:0;margin-left:8px">→</span>
       </div>`).join('');
   }
-  showScreen('s-saved');
 }
 
 // ── 공유 ──
@@ -979,18 +1021,26 @@ function showProfileEdit() {
   loadProfile();
 }
 
-function loadProfile() {
+async function loadProfile() {
+  let p = null;
   try {
-    const p = JSON.parse(localStorage.getItem('sw_profile'));
-    if (!p) return;
-    ['name','city','places','insta'].forEach(k => {
-      const el = document.getElementById('profile-'+k);
-      if(el && p[k]) el.value = p[k];
-    });
-    if(p.themes) document.querySelectorAll('.theme-tag').forEach(t => {
-      if(p.themes.includes(t.textContent)) t.classList.add('selected');
-    });
+    const { data } = await db.from('profiles').select('*').eq('id', getUserId()).single();
+    if (data) {
+      p = { name: data.name, city: data.city, places: data.places, insta: data.instagram, themes: data.themes || [] };
+      try { localStorage.setItem('sw_profile', JSON.stringify(p)); } catch(e) {}
+    }
   } catch(e) {}
+  if (!p) {
+    try { p = JSON.parse(localStorage.getItem('sw_profile')); } catch(e) {}
+  }
+  if (!p) return;
+  ['name','city','places','insta'].forEach(k => {
+    const el = document.getElementById('profile-'+k);
+    if(el && p[k]) el.value = p[k];
+  });
+  if(p.themes) document.querySelectorAll('.theme-tag').forEach(t => {
+    if(p.themes.includes(t.textContent)) t.classList.add('selected');
+  });
 }
 
 function toggleTheme(el) { el.classList.toggle('selected'); }
@@ -1002,23 +1052,21 @@ async function saveProfile() {
   const places = document.getElementById('profile-places')?.value.trim()||'';
   const insta = document.getElementById('profile-insta')?.value.trim()||'';
   const themes = Array.from(document.querySelectorAll('.theme-tag.selected')).map(t=>t.textContent);
-  try { localStorage.setItem('sw_profile', JSON.stringify({name,city,places,insta,themes})); } catch(e) {}
-  if (insta) {
-    try {
-      showToast('신청 중... · Sending...');
-      const res = await fetch('https://formspree.io/f/mojzkkdb', {
-        method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'},
-        body: JSON.stringify({_subject:'[Slow Walker] 가이드 신청 - @'+insta, name, instagram:'@'+insta, city, places, themes:themes.join(', ')})
-      });
-      if(res.ok) { showToast('가이드 신청 완료 · Sent!'); }
-      else showToast('오류 · Error');
-    } catch(e) { showToast('오류 · Error'); }
-  } else {
-    showToast('저장됐어요 · Saved!');
-    try { const p = JSON.parse(localStorage.getItem('sw_profile')); if(p) renderProfileCard(p); } catch(e) {}
-    document.getElementById('profileCard').style.display='block';
-    document.getElementById('profileForm').style.display='none';
-  }
+  const p = {name, city, places, insta, themes};
+  try { localStorage.setItem('sw_profile', JSON.stringify(p)); } catch(e) {}
+  showToast('저장 중...');
+  try {
+    await db.from('profiles').upsert({ id: getUserId(), name, city, places, instagram: insta, themes, updated_at: new Date().toISOString() });
+    if (insta) {
+      await db.from('guide_applications').insert({ instagram: '@'+insta, name, city, places, themes: themes.join(', ') });
+      showToast('저장 & 가이드 신청 완료!');
+    } else {
+      showToast('저장됐어요 · Saved!');
+    }
+  } catch(e) { showToast('저장됐어요 · Saved!'); }
+  renderProfileCard(p);
+  document.getElementById('profileCard').style.display='block';
+  document.getElementById('profileForm').style.display='none';
 }
 
 // ── 가이드 등록 ──
@@ -1029,14 +1077,12 @@ async function submitGuide() {
   if(!insta||!email||!city) { showToast('필수 항목을 입력해주세요'); return; }
   if(!email.includes('@')) { showToast('이메일을 확인해주세요'); return; }
   const idea = document.getElementById('reg-idea')?.value.trim()||'';
+  showToast('신청 중...');
   try {
-    showToast('신청 중...');
-    const res = await fetch('https://formspree.io/f/mojzkkdb', {
-      method:'POST', headers:{'Content-Type':'application/json','Accept':'application/json'},
-      body: JSON.stringify({_subject:'[Slow Walker] 가이드 등록 - @'+insta, instagram:'@'+insta, email, city, idea})
-    });
-    if(res.ok) { showToast('신청 완료 · Application sent!'); setTimeout(()=>goBack(),1500); }
-    else showToast('오류 · Error');
+    const { error } = await db.from('guide_applications').insert({ instagram: '@'+insta, email, city, idea });
+    if (error) throw error;
+    showToast('신청 완료 · Application sent!');
+    setTimeout(()=>goBack(), 1500);
   } catch(e) { showToast('오류 · Error'); }
 }
 
