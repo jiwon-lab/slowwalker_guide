@@ -949,60 +949,98 @@ function wrapCanvasText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 3) {
   return y + Math.min(lines.length, maxLines) * lineHeight;
 }
 
-function createRouteShareBlob(routeId) {
-  return new Promise(resolve => {
-    const data = SW_ROUTE_SHARE_DATA[routeId];
-    const canvas = document.createElement('canvas');
-    canvas.width = 1200;
-    canvas.height = 900;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#F6F3EF';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = data.soft || '#EFE8DD';
-    roundedRect(ctx, 70, 70, 1060, 760, 42);
-    ctx.fill();
+async function createRouteShareBlob(routeId) {
+  const data = SW_ROUTE_SHARE_DATA[routeId];
+  await document.fonts.ready;
+
+  const W = 1080, H = 1080;
+  const PAD = 72;
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // 배경
+  ctx.fillStyle = '#EEEAE4';
+  ctx.fillRect(0, 0, W, H);
+
+  // 왼쪽 컬러 액센트 바
+  ctx.fillStyle = data.color;
+  ctx.fillRect(0, 0, 7, H);
+
+  // 상단 로고 영역
+  ctx.fillStyle = '#1A1A1A';
+  ctx.font = '700 19px "Work Sans", Arial, sans-serif';
+  ctx.letterSpacing = '5px';
+  ctx.fillText('SLOW WALKER', PAD, 68);
+  ctx.letterSpacing = '0px';
+  ctx.fillStyle = '#AAA';
+  ctx.font = '500 17px "Work Sans", Arial, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('slowwalker.kr', W - PAD, 68);
+  ctx.textAlign = 'left';
+
+  // 상단 구분선
+  ctx.strokeStyle = 'rgba(26,26,26,0.12)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(PAD, 90); ctx.lineTo(W - PAD, 90); ctx.stroke();
+
+  // 도시 레이블 (컬러)
+  ctx.fillStyle = data.color;
+  ctx.font = '700 18px "Work Sans", Arial, sans-serif';
+  ctx.letterSpacing = '3px';
+  ctx.fillText(data.cityLabel.toUpperCase(), PAD, 160);
+  ctx.letterSpacing = '0px';
+
+  // 메인 타이틀 (크고 타이트하게)
+  ctx.fillStyle = '#1A1A1A';
+  ctx.font = '700 82px "Work Sans", Arial, sans-serif';
+  ctx.letterSpacing = '-2px';
+  const titleEndY = wrapCanvasText(ctx, data.title, PAD, 268, W - PAD * 2, 90, 2);
+  ctx.letterSpacing = '0px';
+
+  // 한국어 타이틀
+  ctx.fillStyle = '#888';
+  ctx.font = '400 32px "Noto Sans KR", Arial, sans-serif';
+  ctx.fillText(data.titleKr, PAD, titleEndY + 18);
+
+  // 구분선
+  const divY = titleEndY + 72;
+  ctx.strokeStyle = 'rgba(26,26,26,0.13)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(PAD, divY); ctx.lineTo(W - PAD, divY); ctx.stroke();
+
+  // 스팟 목록 (균등 배분)
+  const spotsStartY = divY + 60;
+  const spotsEndY = H - 70;
+  const step = (spotsEndY - spotsStartY) / data.spots.length;
+
+  data.spots.forEach((spot, i) => {
+    const sy = spotsStartY + i * step;
+    const r = 18;
+
+    // 번호 원
     ctx.fillStyle = data.color;
-    roundedRect(ctx, 70, 70, 18, 760, 9);
-    ctx.fill();
-    ctx.fillStyle = '#1A1A1A';
-    ctx.font = '700 64px Work Sans, Arial, sans-serif';
-    wrapCanvasText(ctx, data.title, 135, 170, 890, 70, 2);
-    ctx.fillStyle = '#777';
-    ctx.font = '500 34px Noto Sans KR, Arial, sans-serif';
-    ctx.fillText(data.titleKr, 135, 275);
-    ctx.fillStyle = data.color;
-    ctx.font = '700 24px Work Sans, Arial, sans-serif';
-    ctx.fillText(data.cityLabel + ' · ' + data.spots.length + ' Spots', 135, 345);
-    ctx.strokeStyle = 'rgba(26,26,26,.16)';
-    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(135, 385);
-    ctx.lineTo(1030, 385);
-    ctx.stroke();
-    let y = 455;
-    data.spots.forEach((spot, index) => {
-      ctx.fillStyle = data.color;
-      ctx.beginPath();
-      ctx.arc(150, y - 9, 13, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#fff';
-      ctx.font = '700 17px Work Sans, Arial, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText(String(index + 1), 150, y - 3);
-      ctx.textAlign = 'left';
-      ctx.fillStyle = '#1A1A1A';
-      ctx.font = '700 32px Work Sans, Arial, sans-serif';
-      ctx.fillText(spot.name, 190, y);
-      ctx.fillStyle = '#888';
-      ctx.font = '500 23px Noto Sans KR, Arial, sans-serif';
-      ctx.fillText(spot.nameKr, 190, y + 34);
-      y += 82;
-    });
-    ctx.fillStyle = '#A7A19A';
-    ctx.font = '600 22px Work Sans, Arial, sans-serif';
-    ctx.fillText(data.url, 135, 800);
-    canvas.toBlob(blob => resolve(blob), 'image/png', 0.95);
+    ctx.arc(PAD + r, sy, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.font = '700 17px "Work Sans", Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(String(i + 1), PAD + r, sy + 6);
+    ctx.textAlign = 'left';
+
+    // 스팟 이름 EN
+    ctx.fillStyle = '#1A1A1A';
+    ctx.font = '600 30px "Work Sans", Arial, sans-serif';
+    ctx.fillText(spot.name, PAD + r * 2 + 14, sy + 4);
+    const enW = ctx.measureText(spot.name).width;
+    // KR (같은 줄, EN 뒤)
+    ctx.fillStyle = '#999';
+    ctx.font = '400 20px "Noto Sans KR", Arial, sans-serif';
+    ctx.fillText(' · ' + spot.nameKr, PAD + r * 2 + 14 + enW, sy + 4);
   });
+
+  return new Promise(resolve => canvas.toBlob(blob => resolve(blob), 'image/png', 0.95));
 }
 
 async function shareRouteImage(routeId) {
