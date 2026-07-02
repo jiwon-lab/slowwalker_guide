@@ -437,11 +437,7 @@
 
         <div style="margin-bottom:16px">
           <div class="cc-label">도시 · City</div>
-          <div style="display:flex;gap:6px">
-            <button onclick="ccSelectCity(this,'Seoul')" class="cc-city-btn">Seoul · 서울</button>
-            <button onclick="ccSelectCity(this,'Busan')" class="cc-city-btn">Busan · 부산</button>
-            <button onclick="ccSelectCity(this,'Berlin')" class="cc-city-btn">Berlin · 베를린</button>
-          </div>
+          <input id="ccCityInput" type="text" maxlength="40" placeholder="예: Seoul, Tokyo, Paris, 부산 ..." class="cc-input" style="width:100%;margin-bottom:0">
         </div>
 
         <div style="margin-bottom:16px">
@@ -1358,7 +1354,7 @@ function ccReset() {
   ccCityVal = '';
   ccSpots = [];
   ccActiveSpotId = null;
-  document.querySelectorAll('.cc-city-btn').forEach(b => { b.style.background='#F2EFE9'; b.style.color='#555'; b.style.borderColor='var(--line)'; });
+  const ci = document.getElementById('ccCityInput'); if(ci) ci.value = '';
   const ti = document.getElementById('ccTitleInput'); if(ti) ti.value = '';
   document.querySelectorAll('#ccTagList .theme-tag').forEach(t => t.classList.remove('selected'));
   const sl = document.getElementById('ccSpotList'); if(sl) sl.innerHTML = '';
@@ -1384,17 +1380,12 @@ function ccUpdateDots(active) {
 }
 
 function ccSelectCity(btn, city) {
-  ccCityVal = city;
-  document.querySelectorAll('.cc-city-btn').forEach(b => {
-    const sel = b===btn;
-    b.style.background = sel?'#1A1A1A':'#F2EFE9';
-    b.style.color = sel?'#F6F3EF':'#555';
-    b.style.borderColor = sel?'#1A1A1A':'var(--line)';
-  });
+  // legacy — no longer used
 }
 
 function ccGoStep2() {
-  if (!ccCityVal) { showToast('도시를 선택해주세요'); return; }
+  ccCityVal = document.getElementById('ccCityInput')?.value.trim();
+  if (!ccCityVal) { showToast('도시를 입력해주세요 · Enter a city'); return; }
   const title = document.getElementById('ccTitleInput')?.value.trim();
   if (!title) { showToast('코스 이름을 입력해주세요'); return; }
   if (ccSpots.length === 0) { ccAddSpot(); ccAddSpot(); ccAddSpot(); }
