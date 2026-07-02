@@ -529,6 +529,7 @@ let _authUser = null;
 db.auth.getSession().then(({ data: { session } }) => {
   _authUser = session?.user || null;
   renderAuthState();
+  checkHomeGuideBtn();
 });
 db.auth.onAuthStateChange((_e, session) => {
   _authUser = session?.user || null;
