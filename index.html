@@ -235,6 +235,12 @@
         <div style="flex:1;text-align:center;border-left:1px solid #D8D4CE"><div style="font-size:20px;font-weight:700;color:#1A1A1A;letter-spacing:-1px">4</div><div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#999">Routes</div><div style="font-family:'Noto Sans KR',sans-serif;font-size:10px;font-weight:400;color:#999">코스</div></div>
         <div style="flex:1;text-align:center;border-left:1px solid #D8D4CE"><div style="font-size:20px;font-weight:700;color:#1A1A1A;letter-spacing:-1px">21</div><div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#999">Spots</div><div style="font-family:'Noto Sans KR',sans-serif;font-size:10px;font-weight:400;color:#999">스팟</div></div>
       </div>
+      <!-- 가이드 코스 섹션 -->
+      <div id="communitySection" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid #D8D4CE">
+        <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:10px">가이드 코스 · Community Courses</div>
+        <div id="communityList" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+
       <div style="margin-top:16px;padding-top:16px;border-top:1px solid #D8D4CE">
         <div id="homeBecomeGuide" onclick="showScreen('s-register')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#1A1A1A;cursor:pointer;border-radius:14px">
           <div><div style="font-size:11px;font-weight:600;letter-spacing:1px;color:#F6F3EF">Become a Guide</div><div style="font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:400;color:#999;margin-top:2px">가이드로 등록하기</div></div>
@@ -636,6 +642,113 @@ function goBack() {
 function renderHome() {
   showAllCountries();
   checkHomeGuideBtn();
+  loadCommunityCoursesForHome();
+}
+
+async function loadCommunityCoursesForHome() {
+  try {
+    const { data } = await db.from('courses')
+      .select('id, city, title_kr, title_en, tags, profiles(name)')
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false });
+    if (!data?.length) return;
+    const section = document.getElementById('communitySection');
+    const list = document.getElementById('communityList');
+    if (!section || !list) return;
+    list.innerHTML = data.map(c => `
+      <div class="sel-card" onclick="openSupabaseCourse('${c.id}')">
+        <div style="font-size:16px;font-weight:700;color:#1A1A1A;letter-spacing:-0.3px;line-height:1.2;margin-bottom:3px">${ccEsc(c.title_kr)}</div>
+        ${c.title_en ? `<div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;color:#555;margin-bottom:6px">${ccEsc(c.title_en)}</div>` : ''}
+        <div style="display:flex;align-items:center;gap:6px;padding-top:8px;border-top:1px solid var(--line)">
+          <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;background:#1A1A1A;color:#fff;border-radius:6px">${ccEsc(c.city)}</div>
+          <div style="font-size:12px;font-weight:500;color:#555">${ccEsc(c.profiles?.name || 'Guide')}</div>
+        </div>
+        <div style="position:absolute;right:16px;top:50%;transform:translateY(-50%);color:#999;font-size:14px">→</div>
+      </div>`).join('');
+    section.style.display = 'block';
+  } catch(e) {}
+}
+
+async function openSupabaseCourse(courseId) {
+  navHistory.push('s-home');
+  showToast('불러오는 중...');
+  try {
+    const [{ data: course }, { data: spots }] = await Promise.all([
+      db.from('courses').select('*, profiles(name)').eq('id', courseId).single(),
+      db.from('spots').select('*').eq('course_id', courseId).order('order_index')
+    ]);
+    if (!course || !spots) { showToast('코스를 불러올 수 없어요'); return; }
+
+    const color = '#3D3530';
+    const colorSoft = '#EDE8E2';
+    const guideName = ccEsc(course.profiles?.name || 'Guide');
+    const tags = (course.tags || []).map(t => '#' + t).join(' ');
+    const mapQ = encodeURIComponent((course.title_en || course.title_kr) + ' ' + course.city);
+
+    let html = `<div class="slide"><article class="sw-card sw-cover" style="--course:${color};--course-soft:${colorSoft}">
+      <div class="sw-logo-stamp" aria-hidden="true"></div>
+      <div class="sw-place">${ccEsc(course.city)}</div>
+      <h2 class="sw-title">${ccEsc(course.title_kr)}</h2>
+      ${course.title_en ? `<p class="sw-title-ko">${ccEsc(course.title_en)}</p>` : ''}
+      <div class="sw-guide"><div><small>Today's local guide</small><strong>${guideName}</strong></div>
+      <div class="sw-guide-spots">${spots.length} Spots&nbsp; ${'●'.repeat(spots.length)}</div></div>
+      ${tags ? `<p class="sw-tags">${ccEsc(tags)}</p>` : ''}
+    </article></div>`;
+
+    spots.forEach(spot => {
+      const name = ccEsc(spot.name_en || spot.name_kr);
+      const nameKr = ccEsc(spot.name_kr);
+      const comment = ccEsc(spot.comment_en || spot.comment_kr);
+      const commentKr = ccEsc(spot.comment_kr);
+      const q = encodeURIComponent((spot.name_en || spot.name_kr) + ' ' + course.city);
+      const photoStyle = spot.photo_crop_y != null ? `object-position:center ${spot.photo_crop_y}%` : '';
+      html += `<div class="slide"><article class="sw-card sw-content" style="--course:${color};--course-soft:${colorSoft}">
+        <div class="sw-photo">${spot.photo_url
+          ? `<img src="${ccEsc(spot.photo_url)}" alt="${name}" style="${photoStyle}" onload="this.parentElement.classList.add('loaded')" onerror="this.hidden=true"><span>PLACE PHOTO</span>`
+          : `<span>PLACE PHOTO</span>`}</div>
+        <div class="sw-title-row"><h2 class="sw-title">${name}</h2>
+          <div class="sw-map-buttons"><a class="sw-map-button google" href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" fill="white" stroke="#E0E0E0" stroke-width="0.5"/><path d="M14.5 10.2c0-.4 0-.7-.1-1H10v1.9h2.5c-.1.6-.5 1.1-1 1.4v1.2h1.6c1-.9 1.4-2.2 1.4-3.5z" fill="#4285F4"/><path d="M10 15c1.2 0 2.3-.4 3.1-1.1l-1.6-1.2c-.4.3-1 .5-1.5.5-1.2 0-2.2-.8-2.6-1.9H5.8v1.2C6.6 14.1 8.2 15 10 15z" fill="#34A853"/><path d="M7.4 11.3c-.1-.3-.2-.6-.2-1s.1-.7.2-1V8.1H5.8C5.3 9 5 10 5 11s.3 2 .8 2.9l1.6-1.6z" fill="#FBBC05"/><path d="M10 7.4c.7 0 1.3.2 1.8.7l1.3-1.3C12.3 6 11.2 5.5 10 5.5c-1.8 0-3.4.9-4.2 2.6l1.6 1.2C7.8 8.2 8.8 7.4 10 7.4z" fill="#EA4335"/></svg>
+          </a></div>
+        </div>
+        ${spot.name_en && spot.name_kr !== spot.name_en ? `<p class="sw-title-ko">${nameKr}</p>` : ''}
+        <div class="sw-copy"><p>${comment}</p>
+        ${spot.comment_en && spot.comment_kr !== spot.comment_en ? `<p class="ko">${commentKr}</p>` : ''}</div>
+      </article></div>`;
+    });
+
+    html += `<div class="slide"><article class="sw-card sw-ending" style="--course:${color};--course-soft:${colorSoft}">
+      <h2 class="sw-title">${ccEsc(course.title_kr)}</h2>
+      ${course.title_en ? `<p class="sw-title-ko">${ccEsc(course.title_en)}</p>` : ''}
+      <div class="sw-actions">
+        <a class="sw-action primary" href="https://www.google.com/maps/search/?api=1&query=${mapQ}" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12z" fill="currentColor"/><circle cx="12" cy="9" r="2.4" fill="#fff"/></svg>
+          <span><span class="en">Google Maps에서 보기</span></span>
+        </a>
+      </div>
+    </article></div>`;
+
+    currentRouteData = { id: courseId, title_en: course.title_en || course.title_kr, title_kr: course.title_kr, color, cityName: course.city, mapUrl: '' };
+
+    const track = document.getElementById('slideTrack');
+    track.innerHTML = html;
+    currentSlides = Array.from(track.querySelectorAll('.slide'));
+
+    const prog = document.getElementById('slideProgress');
+    prog.innerHTML = currentSlides.map((_,i) => `<div class="prog-seg" id="pseg${i}"></div>`).join('');
+    const nav = document.getElementById('slideNav');
+    nav.innerHTML = currentSlides.map((_,i) => `<div class="sdot" onclick="goToSlide(${i})"></div>`).join('');
+
+    updateSaveTourNavIcon();
+    goToSlide(0);
+
+    let sx = 0;
+    track.addEventListener('touchstart', e => sx = e.touches[0].clientX, {passive:true});
+    track.addEventListener('touchend', e => { const dx = e.changedTouches[0].clientX - sx; if (Math.abs(dx) > 40) goToSlide(currentSlide + (dx < 0 ? 1 : -1)); });
+    document.onkeydown = e => { if (e.key === 'ArrowRight') goToSlide(currentSlide+1); if (e.key === 'ArrowLeft') goToSlide(currentSlide-1); };
+
+    showScreen('s-slides');
+  } catch(e) { showToast('오류가 발생했어요'); }
 }
 
 async function checkHomeGuideBtn() {
