@@ -24,11 +24,11 @@
   *{margin:0;padding:0;box-sizing:border-box;}
   html,body{width:100%;height:100%;background:var(--bg);font-family:'Work Sans','Noto Sans KR',sans-serif;overflow:hidden;}
 
-  .app{width:100%;height:100vh;height:100dvh;display:flex;justify-content:center;align-items:center;}
+  .app{position:fixed;inset:0;display:flex;justify-content:center;align-items:center;}
 
   .phone{
     width:min(390px,100vw);
-    height:min(580px,100vh);height:min(580px,100dvh);
+    height:min(580px,100svh);
     background:var(--card);
     position:relative;overflow:hidden;
     display:flex;flex-direction:column;
