@@ -647,10 +647,11 @@ function renderHome() {
 
 async function loadCommunityCoursesForHome() {
   try {
-    const { data } = await db.from('courses')
-      .select('id, city, title_kr, title_en, tags, profiles(name)')
+    const { data, error } = await db.from('courses')
+      .select('id, city, title_kr, title_en, tags, guide_id')
       .eq('status', 'approved')
       .order('created_at', { ascending: false });
+    console.log('[community] data:', data, 'error:', error);
     if (!data?.length) return;
     const section = document.getElementById('communitySection');
     const list = document.getElementById('communityList');
@@ -661,7 +662,7 @@ async function loadCommunityCoursesForHome() {
         ${c.title_en ? `<div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;color:#555;margin-bottom:6px">${ccEsc(c.title_en)}</div>` : ''}
         <div style="display:flex;align-items:center;gap:6px;padding-top:8px;border-top:1px solid var(--line)">
           <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;background:#1A1A1A;color:#fff;border-radius:6px">${ccEsc(c.city)}</div>
-          <div style="font-size:12px;font-weight:500;color:#555">${ccEsc(c.profiles?.name || 'Guide')}</div>
+          <div style="font-size:12px;font-weight:500;color:#555">Guide</div>
         </div>
         <div style="position:absolute;right:16px;top:50%;transform:translateY(-50%);color:#999;font-size:14px">→</div>
       </div>`).join('');
