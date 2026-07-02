@@ -244,7 +244,6 @@
           <div><div style="font-size:11px;font-weight:600;letter-spacing:1px;color:#F6F3EF">Create My Course · 내 코스 만들기</div><div style="font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:400;color:#999;margin-top:2px">나만의 여행 코스를 공유해보세요</div></div>
           <span style="color:#F6F3EF;font-size:14px">✍</span>
         </div>
-        <div id="_dbgId" style="margin-top:8px;padding:8px;background:#fff3cd;border-radius:8px;font-size:10px;word-break:break-all;color:#333"></div>
       </div>
     </div>
   </div>
@@ -535,8 +534,6 @@ db.auth.onAuthStateChange((_e, session) => {
   _authUser = session?.user || null;
   renderAuthState();
   checkHomeGuideBtn();
-  const dbg = document.getElementById('_dbgId');
-  if (dbg) dbg.textContent = _authUser ? ('AUTH ID: ' + _authUser.id) : '(로그인 안됨)';
 });
 
 function getUserId() {
@@ -643,11 +640,6 @@ function renderHome() {
 }
 
 async function checkHomeGuideBtn() {
-  // 임시 디버그: 화면에 ID 표시
-  if (_authUser) {
-    const dbg = document.getElementById('_dbgId');
-    if (dbg) dbg.textContent = 'AUTH ID: ' + _authUser.id;
-  }
   const becomeBtn = document.getElementById('homeBecomeGuide');
   const createBtn = document.getElementById('homeCreateCourse');
   if (!becomeBtn || !createBtn) return;
@@ -1364,11 +1356,9 @@ function ccEsc(s) {
 
 async function getUserRole() {
   try {
-    const uid = getUserId();
-    console.log('[getUserRole] querying id:', uid);
-    const { data, error } = await db.from('profiles').select('role').eq('id', uid).single();
-    if (error) { console.warn('[getUserRole] error:', error.message); return 'user'; }
-    console.log('[getUserRole] role:', data?.role);
+    const { data, error } = await db.from('profiles').select('role').eq('id', getUserId()).single();
+    if (error) return 'user';
+
     return data?.role || 'user';
   } catch(e) { console.warn('[getUserRole] catch:', e); return 'user'; }
 }
