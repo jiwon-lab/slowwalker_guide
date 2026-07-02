@@ -120,6 +120,46 @@
   #googleMapNav,#naverMapNav{display:none!important}.like-tour-nav{display:none;align-items:center;gap:4px;padding:5px 3px;border:0;background:transparent;color:#1A1A1A;cursor:pointer}.like-tour-nav svg{overflow:visible}.like-tour-nav.liked .like-heart{fill:#e34b5f;stroke:#e34b5f}.like-count{min-width:22px;font-family:'Work Sans',sans-serif;font-size:12px;font-weight:600;color:#555;text-align:left}
   @media(max-width:390px){.sw-card{padding-left:22px;padding-right:22px}.sw-title{font-size:44px}.sw-cover .sw-title{font-size:36px}.sw-content .sw-title{font-size:40px}.sw-tags{font-size:18px}}
 
+  /* ── 스켈레톤 로딩 ── */
+  @keyframes sw-shimmer {
+    0%   { background-position: -600px 0; }
+    100% { background-position: 600px 0; }
+  }
+  .sw-photo.loading {
+    background: linear-gradient(90deg, #e2ddd7 25%, #ece8e2 50%, #e2ddd7 75%) !important;
+    background-size: 1200px 100% !important;
+    animation: sw-shimmer 1.4s infinite linear;
+  }
+  .sw-photo.loading img { opacity: 0; pointer-events: none; }
+  .sw-photo img { width:100%; height:100%; display:block; object-fit:cover; object-position:center; }
+
+  /* ── 코스 생성 ── */
+  .cc-step-bar{display:flex;gap:6px;margin-bottom:20px}
+  .cc-step-dot{flex:1;height:3px;background:var(--line);border-radius:2px;transition:background 0.3s}
+  .cc-step-dot.done{background:#1A1A1A;opacity:0.3}
+  .cc-step-dot.active{background:#1A1A1A}
+  .cc-label{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:6px}
+  .cc-input{width:100%;padding:9px 11px;border:1.5px solid var(--line);background:#F6F3EF;outline:none;font-family:'Work Sans','Noto Sans KR',sans-serif;font-size:13px;color:#1A1A1A;border-radius:9px;margin-bottom:7px;box-sizing:border-box}
+  .cc-input:focus{border-color:#1A1A1A}
+  .cc-city-btn{flex:1;padding:10px;background:#F2EFE9;border:1.5px solid var(--line);border-radius:10px;font-family:'Work Sans',sans-serif;font-size:12px;font-weight:600;color:#555;cursor:pointer;transition:all 0.15s}
+  .cc-spot-card{background:#F2EFE9;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:10px}
+  .cc-photo-frame{width:100%;aspect-ratio:16/8.5;background:#DDD8D2;position:relative;overflow:hidden;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .cc-photo-frame img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+  .cc-photo-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#AAA}
+  .cc-photo-placeholder span{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase}
+  .cc-crop-row{padding:8px 14px;display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);background:#F6F3EF}
+  .cc-crop-label{font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#bbb;white-space:nowrap}
+  .cc-spot-body{padding:12px 14px}
+  .cc-char-count{font-size:10px;color:#bbb;text-align:right;margin-top:-4px;margin-bottom:6px}
+  .cc-spot-actions{display:flex;gap:5px;padding:8px 14px 12px;border-top:1px solid var(--line)}
+  .cc-spot-btn{flex:1;padding:7px;background:transparent;border:1.5px solid var(--line);color:#777;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:'Work Sans',sans-serif;border-radius:8px;transition:all 0.15s}
+  .cc-spot-btn:hover:not([disabled]){border-color:#1A1A1A;color:#1A1A1A}
+  .cc-spot-btn[disabled]{opacity:0.28;cursor:default}
+  .cc-spot-btn.del{border-color:#e5c5c5;color:#c0392b}
+  .cc-spot-btn.del:hover{background:#c0392b;color:#fff;border-color:#c0392b}
+  .cc-add-spot{width:100%;padding:13px;background:transparent;border:1.5px dashed var(--line);color:#999;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:1px;cursor:pointer;border-radius:12px;transition:all 0.2s;box-sizing:border-box}
+  .cc-add-spot:hover{border-color:#1A1A1A;color:#1A1A1A}
+
 </style>
 </head>
 <body>
@@ -310,7 +350,8 @@
         </div>
         <button onclick="showProfileEdit()" style="width:100%;padding:11px;background:transparent;border:1.5px solid var(--line);color:#555;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;border-radius:10px">Edit Profile · 수정</button>
         <button onclick="showSavedTours()" style="width:100%;padding:11px;background:#F2EFE9;border:1.5px solid var(--line);color:#555;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;border-radius:10px">🔖 My Tours · 저장한 투어</button>
-        <button onclick="showScreen('s-register')" style="width:100%;padding:11px;background:#1A1A1A;color:#F6F3EF;border:none;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;border-radius:10px">Become a Guide · 가이드 등록</button>
+        <button id="createCourseBtn" onclick="openCourseCreate()" style="display:none;width:100%;padding:11px;background:#1A1A1A;color:#F6F3EF;border:none;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;border-radius:10px">✍ 내 코스 만들기</button>
+        <button id="becomeGuideBtn" onclick="showScreen('s-register')" style="width:100%;padding:11px;background:#1A1A1A;color:#F6F3EF;border:none;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;margin-bottom:8px;border-radius:10px">Become a Guide · 가이드 등록</button>
         <button id="logoutBtn" onclick="signOut()" style="display:none;width:100%;padding:11px;background:transparent;border:1.5px solid var(--line);color:#999;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:10px">Log Out · 로그아웃</button>
       </div>
       <!-- 프로필 폼 -->
@@ -371,8 +412,103 @@
         <div><div style="font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:6px">Your City *</div><input id="reg-city" type="text" placeholder="e.g. Busan, Berlin, Tokyo" style="width:100%;padding:10px 12px;border:1.5px solid var(--line);background:#F6F3EF;outline:none;font-family:'Work Sans',sans-serif;font-size:13px;color:#1A1A1A;border-radius:10px"><div style="font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:400;color:#999;margin-top:4px">로컬로 활동하는 도시</div></div>
         <div><div style="font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:6px">Route idea (선택)</div><textarea id="reg-idea" placeholder="e.g. Jazz bars in Busan..." style="width:100%;padding:10px 12px;border:1.5px solid var(--line);background:#F6F3EF;outline:none;font-family:'Work Sans',sans-serif;font-size:12px;color:#1A1A1A;height:72px;resize:none;border-radius:10px"></textarea></div>
         <button onclick="submitGuide()" style="width:100%;padding:12px;background:#1A1A1A;color:#F6F3EF;border:none;cursor:pointer;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;border-radius:10px">Apply as Guide · 가이드 신청</button>
-        <div style="font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:400;color:#999;text-align:center;padding-bottom:20px">검토 후 이메일로 연락드릴게요</div>
+        <div style="font-family:'Work Sans','Noto Sans KR',sans-serif;font-size:11px;font-weight:500;color:#1A1A1A;text-align:center;padding-bottom:20px">We'll review your application and reach out by email · 검토 후 이메일로 연락드릴게요</div>
       </div>
+    </div>
+  </div>
+
+  <!-- ══ 코스 생성 ══ -->
+  <div class="screen" id="s-course-create">
+    <div style="padding:20px 18px 80px;overflow-y:auto;height:100%;box-sizing:border-box">
+
+      <div class="cc-step-bar">
+        <div class="cc-step-dot active" id="ccDot1"></div>
+        <div class="cc-step-dot" id="ccDot2"></div>
+        <div class="cc-step-dot" id="ccDot3"></div>
+      </div>
+
+      <!-- Step 1: 기본 정보 -->
+      <div id="cc-s1">
+        <div style="margin-bottom:20px">
+          <div style="font-size:9px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#999;margin-bottom:4px">Step 1 of 3</div>
+          <div style="font-size:20px;font-weight:700;color:#1A1A1A;letter-spacing:-0.5px">코스 기본 정보</div>
+          <div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;color:#777;margin-top:2px">Basic course info</div>
+        </div>
+
+        <div style="margin-bottom:16px">
+          <div class="cc-label">도시 · City</div>
+          <div style="display:flex;gap:6px">
+            <button onclick="ccSelectCity(this,'Seoul')" class="cc-city-btn">Seoul</button>
+            <button onclick="ccSelectCity(this,'Busan')" class="cc-city-btn">Busan</button>
+            <button onclick="ccSelectCity(this,'Berlin')" class="cc-city-btn">Berlin</button>
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px">
+          <div class="cc-label">코스 이름 (한글 또는 영어) · Course Name</div>
+          <input id="ccTitleInput" type="text" maxlength="40" placeholder="예: 한남동 셀럽 코스 · K-Celeb Tour in Hannam" class="cc-input" style="width:100%;margin-bottom:0">
+        </div>
+
+        <div style="margin-bottom:24px">
+          <div class="cc-label">테마 태그 · Tags</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px" id="ccTagList">
+            <div onclick="this.classList.toggle('selected')" data-tag="Local Food" class="theme-tag">🍜 Local Food</div>
+            <div onclick="this.classList.toggle('selected')" data-tag="Cafe" class="theme-tag">☕ Cafe</div>
+            <div onclick="this.classList.toggle('selected')" data-tag="Music" class="theme-tag">🎷 Music</div>
+            <div onclick="this.classList.toggle('selected')" data-tag="Beauty" class="theme-tag">💄 Beauty</div>
+            <div onclick="this.classList.toggle('selected')" data-tag="Vintage" class="theme-tag">👗 Vintage</div>
+            <div onclick="this.classList.toggle('selected')" data-tag="Art & Design" class="theme-tag">🎨 Art & Design</div>
+            <div onclick="this.classList.toggle('selected')" data-tag="Night Life" class="theme-tag">🌙 Night Life</div>
+            <div onclick="this.classList.toggle('selected')" data-tag="Nature" class="theme-tag">🌿 Nature</div>
+          </div>
+        </div>
+
+        <button onclick="ccGoStep2()" style="width:100%;padding:13px;background:#1A1A1A;color:#F6F3EF;border:none;border-radius:12px;font-family:'Work Sans',sans-serif;font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer">다음 · Next →</button>
+      </div>
+
+      <!-- Step 2: 스팟 추가 -->
+      <div id="cc-s2" style="display:none">
+        <div style="margin-bottom:16px">
+          <div style="font-size:9px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#999;margin-bottom:4px">Step 2 of 3</div>
+          <div style="font-size:20px;font-weight:700;color:#1A1A1A;letter-spacing:-0.5px">스팟 추가</div>
+          <div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;color:#777;margin-top:2px">최소 3개 · 최대 10개</div>
+        </div>
+        <div id="ccSpotList"></div>
+        <button onclick="ccAddSpot()" id="ccAddSpotBtn" class="cc-add-spot">＋ 스팟 추가</button>
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button onclick="ccGoStep(1)" style="flex:1;padding:12px;background:transparent;border:1.5px solid var(--line);border-radius:12px;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;color:#777;cursor:pointer">← 이전</button>
+          <button onclick="ccGoStep3()" style="flex:2;padding:12px;background:#1A1A1A;color:#F6F3EF;border:none;border-radius:12px;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer">미리보기 · Preview →</button>
+        </div>
+      </div>
+
+      <!-- Step 3: 미리보기 & 제출 -->
+      <div id="cc-s3" style="display:none">
+        <div style="margin-bottom:16px">
+          <div style="font-size:9px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#999;margin-bottom:4px">Step 3 of 3</div>
+          <div style="font-size:20px;font-weight:700;color:#1A1A1A;letter-spacing:-0.5px">미리보기 & 공유</div>
+          <div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;color:#777;margin-top:2px">Preview & Submit</div>
+        </div>
+        <div id="ccPreviewHeader" style="margin-bottom:12px"></div>
+        <div id="ccPreviewSpots"></div>
+        <div style="background:#F2EFE9;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:14px">
+          <div style="font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:4px">검토 안내</div>
+          <div style="font-family:'Noto Sans KR',sans-serif;font-size:11px;color:#777;line-height:1.6">제출 후 검토 및 번역을 거쳐 앱에 공개됩니다. 승인되면 슬로우워커 앱에 코스가 등록돼요.</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button onclick="ccGoStep(2)" style="flex:1;padding:12px;background:transparent;border:1.5px solid var(--line);border-radius:12px;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;color:#777;cursor:pointer">← 수정</button>
+          <button onclick="ccSubmit()" id="ccSubmitBtn" style="flex:2;padding:12px;background:#1A1A1A;color:#F6F3EF;border:none;border-radius:12px;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer">공유하기 · Submit</button>
+        </div>
+      </div>
+
+      <!-- 가이드 아님 -->
+      <div id="cc-notguide" style="display:none;text-align:center;padding:48px 0">
+        <div style="font-size:36px;margin-bottom:14px">🔒</div>
+        <div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:6px">가이드 전용 기능</div>
+        <div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;color:#777;line-height:1.7;margin-bottom:24px">가이드 승인 후 이용 가능합니다.<br>먼저 가이드 신청을 해주세요.</div>
+        <button onclick="showScreen('s-register')" style="width:100%;padding:12px;background:#1A1A1A;color:#F6F3EF;border:none;border-radius:12px;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer">가이드 신청하기</button>
+      </div>
+
+      <input type="file" id="ccFileInput" accept="image/*" style="display:none" onchange="ccHandlePhotoUpload(this)">
     </div>
   </div>
 
@@ -1099,6 +1235,12 @@ function renderProfileCard(p) {
     th.innerHTML = p.themes.map(t=>`<span style="font-size:10px;font-weight:500;padding:4px 10px;background:#1A1A1A;color:#F6F3EF;border-radius:20px">${t}</span>`).join('');
     if(tw) tw.style.display='block';
   }
+  getUserRole().then(role => {
+    const ccBtn = document.getElementById('createCourseBtn');
+    const guideBtn = document.getElementById('becomeGuideBtn');
+    if (ccBtn) ccBtn.style.display = role==='guide' ? 'block' : 'none';
+    if (guideBtn) guideBtn.style.display = role==='guide' ? 'none' : 'block';
+  });
 }
 
 function showProfileEdit() {
@@ -1179,6 +1321,269 @@ function showToast(msg) {
   t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ── 코스 생성 ──
+let ccCityVal = '';
+let ccSpots = [];
+let ccActiveSpotId = null;
+
+function ccEsc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function getUserRole() {
+  try {
+    const { data } = await db.from('profiles').select('role').eq('id', getUserId()).single();
+    return data?.role || 'user';
+  } catch(e) { return 'user'; }
+}
+
+async function openCourseCreate() {
+  const prev = document.querySelector('.screen.active')?.id || 's-profile';
+  navHistory.push(prev);
+  showScreen('s-course-create');
+  ['cc-s1','cc-s2','cc-s3','cc-notguide'].forEach(id => { const el=document.getElementById(id); if(el) el.style.display='none'; });
+
+  const role = await getUserRole();
+  if (role !== 'guide') {
+    document.getElementById('cc-notguide').style.display = 'block';
+    return;
+  }
+  ccReset();
+  document.getElementById('cc-s1').style.display = 'block';
+}
+
+function ccReset() {
+  ccCityVal = '';
+  ccSpots = [];
+  ccActiveSpotId = null;
+  document.querySelectorAll('.cc-city-btn').forEach(b => { b.style.background='#F2EFE9'; b.style.color='#555'; b.style.borderColor='var(--line)'; });
+  const ti = document.getElementById('ccTitleInput'); if(ti) ti.value = '';
+  document.querySelectorAll('#ccTagList .theme-tag').forEach(t => t.classList.remove('selected'));
+  const sl = document.getElementById('ccSpotList'); if(sl) sl.innerHTML = '';
+  ccUpdateDots(1);
+}
+
+function ccGoStep(n) {
+  ['cc-s1','cc-s2','cc-s3'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = (i+1===n) ? 'block' : 'none';
+  });
+  ccUpdateDots(n);
+  const sc = document.getElementById('s-course-create');
+  if(sc) sc.firstElementChild.scrollTop = 0;
+}
+
+function ccUpdateDots(active) {
+  ['ccDot1','ccDot2','ccDot3'].forEach((id,i) => {
+    const d = document.getElementById(id);
+    if(!d) return;
+    d.className = 'cc-step-dot' + (i+1<active?' done':i+1===active?' active':'');
+  });
+}
+
+function ccSelectCity(btn, city) {
+  ccCityVal = city;
+  document.querySelectorAll('.cc-city-btn').forEach(b => {
+    const sel = b===btn;
+    b.style.background = sel?'#1A1A1A':'#F2EFE9';
+    b.style.color = sel?'#F6F3EF':'#555';
+    b.style.borderColor = sel?'#1A1A1A':'var(--line)';
+  });
+}
+
+function ccGoStep2() {
+  if (!ccCityVal) { showToast('도시를 선택해주세요'); return; }
+  const title = document.getElementById('ccTitleInput')?.value.trim();
+  if (!title) { showToast('코스 이름을 입력해주세요'); return; }
+  if (ccSpots.length === 0) { ccAddSpot(); ccAddSpot(); ccAddSpot(); }
+  ccRenderSpots();
+  ccGoStep(2);
+}
+
+function ccGoStep3() {
+  if (ccSpots.length < 3) { showToast('스팟을 최소 3개 추가해주세요'); return; }
+  for (const s of ccSpots) {
+    if (!s.blobUrl) { showToast('모든 스팟에 사진을 추가해주세요'); return; }
+    if (!s.name.trim()) { showToast('모든 스팟 이름을 입력해주세요'); return; }
+    if (!s.comment.trim()) { showToast('모든 스팟 코멘트를 입력해주세요'); return; }
+  }
+  ccRenderPreview();
+  ccGoStep(3);
+}
+
+function ccAddSpot() {
+  if (ccSpots.length >= 10) { showToast('최대 10개까지 추가 가능해요'); return; }
+  ccSpots.push({ id: crypto.randomUUID(), name:'', comment:'', blobUrl:null, cropY:50, file:null });
+  ccRenderSpots();
+}
+
+function ccRenderSpots() {
+  const list = document.getElementById('ccSpotList');
+  if (!list) return;
+  list.innerHTML = ccSpots.map((spot, i) => `
+    <div class="cc-spot-card" id="scard-${spot.id}">
+      <div class="cc-photo-frame" onclick="ccTriggerUpload('${spot.id}')">
+        ${spot.blobUrl
+          ? `<img src="${ccEsc(spot.blobUrl)}" style="object-position:center ${spot.cropY}%" data-spot-img="${spot.id}" alt="">
+             <div style="position:absolute;bottom:7px;right:9px;background:rgba(0,0,0,.4);color:#fff;font-size:9px;font-weight:600;letter-spacing:.8px;padding:3px 7px;border-radius:6px;pointer-events:none">탭하여 변경</div>`
+          : `<div class="cc-photo-placeholder">
+               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+               <span>사진 추가 · Add Photo</span>
+             </div>`
+        }
+      </div>
+      ${spot.blobUrl ? `
+        <div class="cc-crop-row">
+          <span class="cc-crop-label">사진 위치</span>
+          <input type="range" min="0" max="100" value="${spot.cropY}" oninput="ccUpdateCrop('${spot.id}',this.value)" style="flex:1;accent-color:#1A1A1A;cursor:pointer">
+          <span class="cc-crop-label">Y</span>
+        </div>` : ''}
+      <div class="cc-spot-body">
+        <div style="font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:5px">Spot ${i+1}</div>
+        <input type="text" placeholder="가게 이름 (한글 또는 영어)" maxlength="40" class="cc-input" value="${ccEsc(spot.name)}" oninput="ccUpdateField('${spot.id}','name',this.value)">
+        <textarea placeholder="코멘트 (한글 또는 영어, 최대 80자)" maxlength="80" rows="2" class="cc-input" style="resize:none" oninput="ccUpdateField('${spot.id}','comment',this.value)">${ccEsc(spot.comment)}</textarea>
+        <div class="cc-char-count" id="cc-cc-${spot.id}">${spot.comment.length}/80</div>
+      </div>
+      <div class="cc-spot-actions">
+        <button class="cc-spot-btn" onclick="ccMoveSpot('${spot.id}',-1)" ${i===0?'disabled':''}>↑</button>
+        <button class="cc-spot-btn" onclick="ccMoveSpot('${spot.id}',1)" ${i===ccSpots.length-1?'disabled':''}>↓</button>
+        ${ccSpots.length>1?`<button class="cc-spot-btn del" onclick="ccDeleteSpot('${spot.id}')">✕ 삭제</button>`:''}
+      </div>
+    </div>`).join('');
+  const addBtn = document.getElementById('ccAddSpotBtn');
+  if (addBtn) addBtn.style.display = ccSpots.length >= 10 ? 'none' : 'block';
+}
+
+function ccTriggerUpload(spotId) {
+  ccActiveSpotId = spotId;
+  const fi = document.getElementById('ccFileInput');
+  if (fi) { fi.value=''; fi.click(); }
+}
+
+function ccHandlePhotoUpload(input) {
+  if (!input.files?.[0]) return;
+  const spot = ccSpots.find(s => s.id === ccActiveSpotId);
+  if (!spot) return;
+  if (spot.blobUrl) URL.revokeObjectURL(spot.blobUrl);
+  spot.file = input.files[0];
+  spot.blobUrl = URL.createObjectURL(spot.file);
+  spot.cropY = 50;
+  ccRenderSpots();
+}
+
+function ccUpdateCrop(spotId, y) {
+  const spot = ccSpots.find(s => s.id === spotId);
+  if (!spot) return;
+  spot.cropY = parseFloat(y);
+  const img = document.querySelector(`[data-spot-img="${spotId}"]`);
+  if (img) img.style.objectPosition = `center ${y}%`;
+}
+
+function ccUpdateField(spotId, field, value) {
+  const spot = ccSpots.find(s => s.id === spotId);
+  if (!spot) return;
+  spot[field] = value;
+  if (field === 'comment') {
+    const cc = document.getElementById(`cc-cc-${spotId}`);
+    if (cc) cc.textContent = value.length + '/80';
+  }
+}
+
+function ccMoveSpot(spotId, dir) {
+  const idx = ccSpots.findIndex(s => s.id === spotId);
+  if (idx < 0) return;
+  const ni = idx + dir;
+  if (ni < 0 || ni >= ccSpots.length) return;
+  [ccSpots[idx], ccSpots[ni]] = [ccSpots[ni], ccSpots[idx]];
+  ccRenderSpots();
+}
+
+function ccDeleteSpot(spotId) {
+  const spot = ccSpots.find(s => s.id === spotId);
+  if (spot?.blobUrl) URL.revokeObjectURL(spot.blobUrl);
+  ccSpots = ccSpots.filter(s => s.id !== spotId);
+  ccRenderSpots();
+}
+
+function ccRenderPreview() {
+  const title = document.getElementById('ccTitleInput')?.value.trim() || '';
+  const tags = Array.from(document.querySelectorAll('#ccTagList .theme-tag.selected')).map(el => el.dataset.tag || el.textContent.trim());
+
+  const hdr = document.getElementById('ccPreviewHeader');
+  if (hdr) hdr.innerHTML = `
+    <div style="padding:14px;background:#F2EFE9;border:1px solid var(--line);border-radius:12px">
+      <div style="font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:4px">${ccEsc(ccCityVal)}</div>
+      <div style="font-size:17px;font-weight:700;color:#1A1A1A;margin-bottom:6px;letter-spacing:-.3px">${ccEsc(title)}</div>
+      ${tags.length?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">${tags.map(t=>`<span style="font-size:10px;padding:2px 8px;background:#1A1A1A1A;color:#555;border-radius:6px">${ccEsc(t)}</span>`).join('')}</div>`:''}
+      <div style="font-size:10px;color:#bbb">${ccSpots.length} Spots</div>
+    </div>`;
+
+  const spotsEl = document.getElementById('ccPreviewSpots');
+  if (spotsEl) spotsEl.innerHTML = ccSpots.map((spot, i) => `
+    <div style="background:#F6F3EF;border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:10px">
+      <div style="width:100%;aspect-ratio:16/8.5;overflow:hidden;position:relative">
+        <img src="${ccEsc(spot.blobUrl)}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;object-position:center ${spot.cropY}%" alt="">
+      </div>
+      <div style="padding:12px 14px">
+        <div style="font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:3px">Spot ${i+1}</div>
+        <div style="font-size:15px;font-weight:700;color:#1A1A1A;margin-bottom:4px">${ccEsc(spot.name)}</div>
+        <div style="font-family:'Noto Sans KR','Work Sans',sans-serif;font-size:12px;color:#555;line-height:1.55">${ccEsc(spot.comment)}</div>
+      </div>
+    </div>`).join('');
+}
+
+async function ccSubmit() {
+  const btn = document.getElementById('ccSubmitBtn');
+  if (!btn || btn.disabled) return;
+  btn.textContent = '업로드 중...';
+  btn.disabled = true;
+
+  try {
+    const title = document.getElementById('ccTitleInput')?.value.trim() || '';
+    const tags = Array.from(document.querySelectorAll('#ccTagList .theme-tag.selected')).map(el => el.dataset.tag || el.textContent.trim());
+
+    const { data: course, error: ce } = await db.from('courses').insert({
+      guide_id: getUserId(),
+      city: ccCityVal,
+      title_kr: title,
+      tags,
+      status: 'pending',
+    }).select().single();
+    if (ce) throw ce;
+
+    for (let i = 0; i < ccSpots.length; i++) {
+      const spot = ccSpots[i];
+      let photoUrl = null;
+      if (spot.file) {
+        try {
+          const ext = (spot.file.name.split('.').pop() || 'jpg').toLowerCase();
+          const path = `spots/${course.id}/${i}.${ext}`;
+          const { error: ue } = await db.storage.from('spot-photos').upload(path, spot.file, { upsert:true });
+          if (!ue) {
+            const { data: { publicUrl } } = db.storage.from('spot-photos').getPublicUrl(path);
+            photoUrl = publicUrl;
+          }
+        } catch(e) {}
+      }
+      await db.from('spots').insert({
+        course_id: course.id,
+        order_index: i,
+        name_kr: spot.name.trim(),
+        comment_kr: spot.comment.trim(),
+        photo_url: photoUrl,
+        photo_crop_y: spot.cropY,
+      });
+    }
+
+    showToast('검토 중이에요 · Under review ✓');
+    setTimeout(() => goBack(), 2200);
+  } catch(e) {
+    console.error(e);
+    showToast('오류가 발생했어요 · Error');
+    if (btn) { btn.textContent = '공유하기 · Submit'; btn.disabled = false; }
+  }
 }
 
 // ── 초기화 ──
