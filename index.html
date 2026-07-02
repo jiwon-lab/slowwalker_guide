@@ -236,9 +236,13 @@
         <div style="flex:1;text-align:center;border-left:1px solid #D8D4CE"><div style="font-size:20px;font-weight:700;color:#1A1A1A;letter-spacing:-1px">21</div><div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#999">Spots</div><div style="font-family:'Noto Sans KR',sans-serif;font-size:10px;font-weight:400;color:#999">스팟</div></div>
       </div>
       <div style="margin-top:16px;padding-top:16px;border-top:1px solid #D8D4CE">
-        <div onclick="showScreen('s-register')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#1A1A1A;cursor:pointer;border-radius:14px">
+        <div id="homeBecomeGuide" onclick="showScreen('s-register')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#1A1A1A;cursor:pointer;border-radius:14px">
           <div><div style="font-size:11px;font-weight:600;letter-spacing:1px;color:#F6F3EF">Become a Guide</div><div style="font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:400;color:#999;margin-top:2px">가이드로 등록하기</div></div>
           <span style="color:#666;font-size:14px">→</span>
+        </div>
+        <div id="homeCreateCourse" onclick="openCourseCreate()" style="display:none;align-items:center;justify-content:space-between;padding:14px 16px;background:#1A1A1A;cursor:pointer;border-radius:14px">
+          <div><div style="font-size:11px;font-weight:600;letter-spacing:1px;color:#F6F3EF">Create My Course · 내 코스 만들기</div><div style="font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:400;color:#999;margin-top:2px">나만의 여행 코스를 공유해보세요</div></div>
+          <span style="color:#F6F3EF;font-size:14px">✍</span>
         </div>
       </div>
     </div>
@@ -528,6 +532,7 @@ db.auth.getSession().then(({ data: { session } }) => {
 db.auth.onAuthStateChange((_e, session) => {
   _authUser = session?.user || null;
   renderAuthState();
+  checkHomeGuideBtn();
 });
 
 function getUserId() {
@@ -630,6 +635,26 @@ function goBack() {
 // ── 홈 렌더링 ──
 function renderHome() {
   showAllCountries();
+  checkHomeGuideBtn();
+}
+
+async function checkHomeGuideBtn() {
+  const becomeBtn = document.getElementById('homeBecomeGuide');
+  const createBtn = document.getElementById('homeCreateCourse');
+  if (!becomeBtn || !createBtn) return;
+  if (!_authUser) {
+    becomeBtn.style.display = 'flex';
+    createBtn.style.display = 'none';
+    return;
+  }
+  const role = await getUserRole();
+  if (role === 'guide') {
+    becomeBtn.style.display = 'none';
+    createBtn.style.display = 'flex';
+  } else {
+    becomeBtn.style.display = 'flex';
+    createBtn.style.display = 'none';
+  }
 }
 
 function getSearchItems() {
