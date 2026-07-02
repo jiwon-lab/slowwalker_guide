@@ -235,13 +235,7 @@
         <div style="flex:1;text-align:center;border-left:1px solid #D8D4CE"><div style="font-size:20px;font-weight:700;color:#1A1A1A;letter-spacing:-1px">4</div><div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#999">Routes</div><div style="font-family:'Noto Sans KR',sans-serif;font-size:10px;font-weight:400;color:#999">코스</div></div>
         <div style="flex:1;text-align:center;border-left:1px solid #D8D4CE"><div style="font-size:20px;font-weight:700;color:#1A1A1A;letter-spacing:-1px">21</div><div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#999">Spots</div><div style="font-family:'Noto Sans KR',sans-serif;font-size:10px;font-weight:400;color:#999">스팟</div></div>
       </div>
-      <!-- 가이드 코스 섹션 -->
-      <div id="communitySection" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid #D8D4CE">
-        <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:10px">가이드 코스 · Community Courses</div>
-        <div id="communityList" style="display:flex;flex-direction:column;gap:8px"></div>
-      </div>
-
-      <div style="margin-top:16px;padding-top:16px;border-top:1px solid #D8D4CE">
+<div style="margin-top:16px;padding-top:16px;border-top:1px solid #D8D4CE">
         <div id="homeBecomeGuide" onclick="showScreen('s-register')" style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:#1A1A1A;cursor:pointer;border-radius:14px">
           <div><div style="font-size:11px;font-weight:600;letter-spacing:1px;color:#F6F3EF">Become a Guide</div><div style="font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:400;color:#999;margin-top:2px">가이드로 등록하기</div></div>
           <span style="color:#666;font-size:14px">→</span>
@@ -639,35 +633,23 @@ function goBack() {
 }
 
 // ── 홈 렌더링 ──
+let _sbCourses = null;
+
 function renderHome() {
   showAllCountries();
   checkHomeGuideBtn();
-  loadCommunityCoursesForHome();
+  initSbCourses();
 }
 
-async function loadCommunityCoursesForHome() {
+async function initSbCourses() {
+  if (_sbCourses !== null) return;
   try {
-    const { data, error } = await db.from('courses')
-      .select('id, city, title_kr, title_en, tags, guide_id')
+    const { data } = await db.from('courses')
+      .select('id, city, title_kr, title_en, guide_id, profiles(name)')
       .eq('status', 'approved')
       .order('created_at', { ascending: false });
-    console.log('[community] data:', data, 'error:', error);
-    if (!data?.length) return;
-    const section = document.getElementById('communitySection');
-    const list = document.getElementById('communityList');
-    if (!section || !list) return;
-    list.innerHTML = data.map(c => `
-      <div class="sel-card" onclick="openSupabaseCourse('${c.id}')">
-        <div style="font-size:16px;font-weight:700;color:#1A1A1A;letter-spacing:-0.3px;line-height:1.2;margin-bottom:3px">${ccEsc(c.title_kr)}</div>
-        ${c.title_en ? `<div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;color:#555;margin-bottom:6px">${ccEsc(c.title_en)}</div>` : ''}
-        <div style="display:flex;align-items:center;gap:6px;padding-top:8px;border-top:1px solid var(--line)">
-          <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;background:#1A1A1A;color:#fff;border-radius:6px">${ccEsc(c.city)}</div>
-          <div style="font-size:12px;font-weight:500;color:#555">Guide</div>
-        </div>
-        <div style="position:absolute;right:16px;top:50%;transform:translateY(-50%);color:#999;font-size:14px">→</div>
-      </div>`).join('');
-    section.style.display = 'block';
-  } catch(e) {}
+    _sbCourses = (data || []).map(c => ({ ...c, guide_name: c.profiles?.name || c.guide_id?.slice(0,8) || 'Guide' }));
+  } catch(e) { _sbCourses = []; }
 }
 
 async function openSupabaseCourse(courseId) {
@@ -812,6 +794,23 @@ function getSearchItems() {
       });
     });
   });
+  // Supabase 가이드 코스
+  if (_sbCourses?.length) {
+    const navCityNames = new Set();
+    Object.values(NAV_DATA).forEach(co => Object.values(co.cities).forEach(ci => navCityNames.add(ci.name.toLowerCase())));
+    const sbCityMap = {};
+    _sbCourses.forEach(c => {
+      const key = c.city.toLowerCase();
+      if (!sbCityMap[key]) sbCityMap[key] = { city: c.city, courses: [] };
+      sbCityMap[key].courses.push(c);
+    });
+    Object.values(sbCityMap).forEach(({ city, courses }) => {
+      if (!navCityNames.has(city.toLowerCase())) {
+        items.push({ type: 'sb-city', name: city, name_kr: city, sub: courses.length + ' Route' + (courses.length > 1 ? 's' : '') });
+      }
+      courses.forEach(c => items.push({ type: 'sb-route', id: c.id, name: c.title_kr, name_kr: c.title_en || '', sub: city }));
+    });
+  }
   return items;
 }
 
@@ -831,6 +830,25 @@ function renderSearchItem(item) {
       <span style="font-size:24px">${item.flag}</span>
       <div style="flex:1">
         <div style="font-size:15px;font-weight:700;color:#1A1A1A">${item.name} <span style="font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:400;color:#999">${item.name_kr}</span></div>
+        <div style="font-size:10px;color:#999;margin-top:2px">${item.sub}</div>
+      </div>
+      <span style="color:#999;font-size:14px">→</span>
+    </div>`;
+  } else if (item.type === 'sb-city') {
+    return `<div class="sel-card" onclick="selectSupabaseCity('${item.name.replace(/'/g,"\\'")}')" style="padding:14px 16px;display:flex;align-items:center;gap:14px">
+      <span style="font-size:24px">📍</span>
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:700;color:#1A1A1A">${item.name}</div>
+        <div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#999;margin-top:2px">${item.sub}</div>
+      </div>
+      <span style="color:#999;font-size:14px">→</span>
+    </div>`;
+  } else if (item.type === 'sb-route') {
+    return `<div class="sel-card" onclick="openSupabaseCourse('${item.id}')" style="padding:14px 16px;display:flex;align-items:center;gap:14px">
+      <span style="font-size:18px">📍</span>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:700;color:#1A1A1A">${item.name}</div>
+        ${item.name_kr ? `<div style="font-family:'Noto Sans KR',sans-serif;font-size:11px;color:#777;margin-top:1px">${item.name_kr}</div>` : ''}
         <div style="font-size:10px;color:#999;margin-top:2px">${item.sub}</div>
       </div>
       <span style="color:#999;font-size:14px">→</span>
@@ -865,13 +883,12 @@ function filterCountries(query) {
   }
   const q = query.toLowerCase();
   // 국가 · 도시 검색
-  const matches = getSearchItems().filter(item =>
-    item.type !== 'route' && (
-      item.name.toLowerCase().includes(q) ||
-      item.name_kr.includes(q) ||
-      (item.sub || '').toLowerCase().includes(q)
-    )
-  );
+  const matches = getSearchItems().filter(item => {
+    if (item.type === 'route') return false;
+    return item.name.toLowerCase().includes(q) ||
+      (item.name_kr || '').toLowerCase().includes(q) ||
+      (item.sub || '').toLowerCase().includes(q);
+  });
   if (all) all.style.display = 'none';
   if (results) {
     results.style.display = 'flex';
@@ -934,7 +951,37 @@ function selectCity(countryId, cityId) {
         <div style="position:absolute;right:16px;top:50%;transform:translateY(-50%);color:#999;font-size:14px">→</div>
       </div>`;
   });
+  // Supabase 승인 코스 (같은 도시)
+  (_sbCourses || []).filter(c => c.city.toLowerCase() === city.name.toLowerCase()).forEach(c => {
+    routeList.innerHTML += renderSbCourseCard(c, city.color);
+  });
   showScreen('s-city');
+}
+
+function selectSupabaseCity(cityName) {
+  navHistory.push('s-home');
+  const courses = (_sbCourses || []).filter(c => c.city.toLowerCase() === cityName.toLowerCase());
+  document.getElementById('cityHeader').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <div style="width:18px;height:3px;background:#1A1A1A"></div>
+      <span style="font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#1A1A1A">${cityName}</span>
+    </div>
+    <div style="font-size:22px;font-weight:700;color:#1A1A1A;letter-spacing:-0.5px">Choose a route</div>
+    <div style="font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:400;color:#555;margin-top:2px">코스를 선택하세요</div>`;
+  document.getElementById('routeList').innerHTML = courses.map(c => renderSbCourseCard(c, '#1A1A1A')).join('');
+  showScreen('s-city');
+}
+
+function renderSbCourseCard(c, color) {
+  return `<div class="sel-card" onclick="openSupabaseCourse('${c.id}')">
+    <div style="font-size:16px;font-weight:700;color:#1A1A1A;letter-spacing:-0.3px;line-height:1.2;margin-bottom:3px">${ccEsc(c.title_kr)}</div>
+    ${c.title_en ? `<div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;color:#555;margin-bottom:8px">${ccEsc(c.title_en)}</div>` : ''}
+    <div style="display:flex;align-items:center;gap:6px;padding-top:8px;border-top:1px solid var(--line)">
+      <div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;background:${color};color:#fff;border-radius:6px">Guide</div>
+      <div style="font-size:12px;font-weight:500;color:#555">${ccEsc(c.guide_name || 'Guide')}</div>
+    </div>
+    <div style="position:absolute;right:16px;top:50%;transform:translateY(-50%);color:#999;font-size:14px">→</div>
+  </div>`;
 }
 
 // ── 코스 열기 ──
