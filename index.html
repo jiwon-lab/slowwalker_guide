@@ -431,26 +431,26 @@
       <div id="cc-s1">
         <div style="margin-bottom:20px">
           <div style="font-size:9px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#999;margin-bottom:4px">Step 1 of 3</div>
-          <div style="font-size:20px;font-weight:700;color:#1A1A1A;letter-spacing:-0.5px">코스 기본 정보</div>
-          <div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;color:#777;margin-top:2px">Basic course info</div>
+          <div style="font-size:20px;font-weight:700;color:#1A1A1A;letter-spacing:-0.5px">코스 기본 정보 · Course Info</div>
+          <div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;color:#777;margin-top:2px">기본 정보를 입력해주세요</div>
         </div>
 
         <div style="margin-bottom:16px">
           <div class="cc-label">도시 · City</div>
           <div style="display:flex;gap:6px">
-            <button onclick="ccSelectCity(this,'Seoul')" class="cc-city-btn">Seoul</button>
-            <button onclick="ccSelectCity(this,'Busan')" class="cc-city-btn">Busan</button>
-            <button onclick="ccSelectCity(this,'Berlin')" class="cc-city-btn">Berlin</button>
+            <button onclick="ccSelectCity(this,'Seoul')" class="cc-city-btn">Seoul · 서울</button>
+            <button onclick="ccSelectCity(this,'Busan')" class="cc-city-btn">Busan · 부산</button>
+            <button onclick="ccSelectCity(this,'Berlin')" class="cc-city-btn">Berlin · 베를린</button>
           </div>
         </div>
 
         <div style="margin-bottom:16px">
-          <div class="cc-label">코스 이름 (한글 또는 영어) · Course Name</div>
-          <input id="ccTitleInput" type="text" maxlength="40" placeholder="예: 한남동 셀럽 코스 · K-Celeb Tour in Hannam" class="cc-input" style="width:100%;margin-bottom:0">
+          <div class="cc-label">코스 이름 · Course Name</div>
+          <input id="ccTitleInput" type="text" maxlength="40" placeholder="한글 또는 영어 · Korean or English" class="cc-input" style="width:100%;margin-bottom:0">
         </div>
 
         <div style="margin-bottom:24px">
-          <div class="cc-label">테마 태그 · Tags</div>
+          <div class="cc-label">테마 태그 · Theme Tags</div>
           <div style="display:flex;flex-wrap:wrap;gap:6px" id="ccTagList">
             <div onclick="this.classList.toggle('selected')" data-tag="Local Food" class="theme-tag">🍜 Local Food</div>
             <div onclick="this.classList.toggle('selected')" data-tag="Cafe" class="theme-tag">☕ Cafe</div>
@@ -470,13 +470,13 @@
       <div id="cc-s2" style="display:none">
         <div style="margin-bottom:16px">
           <div style="font-size:9px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#999;margin-bottom:4px">Step 2 of 3</div>
-          <div style="font-size:20px;font-weight:700;color:#1A1A1A;letter-spacing:-0.5px">스팟 추가</div>
-          <div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;color:#777;margin-top:2px">최소 3개 · 최대 10개</div>
+          <div style="font-size:20px;font-weight:700;color:#1A1A1A;letter-spacing:-0.5px">스팟 추가 · Add Spots</div>
+          <div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;color:#777;margin-top:2px">최소 3개 · Min 3 &nbsp;/&nbsp; 최대 10개 · Max 10</div>
         </div>
         <div id="ccSpotList"></div>
-        <button onclick="ccAddSpot()" id="ccAddSpotBtn" class="cc-add-spot">＋ 스팟 추가</button>
+        <button onclick="ccAddSpot()" id="ccAddSpotBtn" class="cc-add-spot">＋ 스팟 추가 · Add Spot</button>
         <div style="display:flex;gap:8px;margin-top:14px">
-          <button onclick="ccGoStep(1)" style="flex:1;padding:12px;background:transparent;border:1.5px solid var(--line);border-radius:12px;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;color:#777;cursor:pointer">← 이전</button>
+          <button onclick="ccGoStep(1)" style="flex:1;padding:12px;background:transparent;border:1.5px solid var(--line);border-radius:12px;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;color:#777;cursor:pointer">← Back</button>
           <button onclick="ccGoStep3()" style="flex:2;padding:12px;background:#1A1A1A;color:#F6F3EF;border:none;border-radius:12px;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer">미리보기 · Preview →</button>
         </div>
       </div>
@@ -485,17 +485,17 @@
       <div id="cc-s3" style="display:none">
         <div style="margin-bottom:16px">
           <div style="font-size:9px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#999;margin-bottom:4px">Step 3 of 3</div>
-          <div style="font-size:20px;font-weight:700;color:#1A1A1A;letter-spacing:-0.5px">미리보기 & 공유</div>
-          <div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;color:#777;margin-top:2px">Preview & Submit</div>
+          <div style="font-size:20px;font-weight:700;color:#1A1A1A;letter-spacing:-0.5px">미리보기 · Preview</div>
+          <div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;color:#777;margin-top:2px">확인 후 제출해주세요 · Review &amp; Submit</div>
         </div>
         <div id="ccPreviewHeader" style="margin-bottom:12px"></div>
         <div id="ccPreviewSpots"></div>
         <div style="background:#F2EFE9;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:14px">
-          <div style="font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:4px">검토 안내</div>
-          <div style="font-family:'Noto Sans KR',sans-serif;font-size:11px;color:#777;line-height:1.6">제출 후 검토 및 번역을 거쳐 앱에 공개됩니다. 승인되면 슬로우워커 앱에 코스가 등록돼요.</div>
+          <div style="font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:4px">검토 안내 · Review Notice</div>
+          <div style="font-family:'Noto Sans KR',sans-serif;font-size:11px;color:#777;line-height:1.6">제출 후 검토를 거쳐 앱에 공개됩니다.<br><span style="font-family:'Work Sans',sans-serif">After review, your course will be published on the app.</span></div>
         </div>
         <div style="display:flex;gap:8px">
-          <button onclick="ccGoStep(2)" style="flex:1;padding:12px;background:transparent;border:1.5px solid var(--line);border-radius:12px;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;color:#777;cursor:pointer">← 수정</button>
+          <button onclick="ccGoStep(2)" style="flex:1;padding:12px;background:transparent;border:1.5px solid var(--line);border-radius:12px;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:500;color:#777;cursor:pointer">← 수정 · Edit</button>
           <button onclick="ccSubmit()" id="ccSubmitBtn" style="flex:2;padding:12px;background:#1A1A1A;color:#F6F3EF;border:none;border-radius:12px;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer">공유하기 · Submit</button>
         </div>
       </div>
@@ -503,9 +503,9 @@
       <!-- 가이드 아님 -->
       <div id="cc-notguide" style="display:none;text-align:center;padding:48px 0">
         <div style="font-size:36px;margin-bottom:14px">🔒</div>
-        <div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:6px">가이드 전용 기능</div>
-        <div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;color:#777;line-height:1.7;margin-bottom:24px">가이드 승인 후 이용 가능합니다.<br>먼저 가이드 신청을 해주세요.</div>
-        <button onclick="showScreen('s-register')" style="width:100%;padding:12px;background:#1A1A1A;color:#F6F3EF;border:none;border-radius:12px;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer">가이드 신청하기</button>
+        <div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:6px">가이드 전용 · Guides Only</div>
+        <div style="font-family:'Noto Sans KR',sans-serif;font-size:12px;color:#777;line-height:1.7;margin-bottom:24px">가이드 승인 후 이용 가능합니다.<br><span style="font-family:'Work Sans',sans-serif">Available after guide approval.</span></div>
+        <button onclick="showScreen('s-register')" style="width:100%;padding:12px;background:#1A1A1A;color:#F6F3EF;border:none;border-radius:12px;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer">가이드 신청하기 · Apply as Guide</button>
       </div>
 
       <input type="file" id="ccFileInput" accept="image/*" style="display:none" onchange="ccHandlePhotoUpload(this)">
@@ -1431,25 +1431,26 @@ function ccRenderSpots() {
           : `<div class="cc-photo-placeholder">
                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
                <span>사진 추가 · Add Photo</span>
+               <span style="font-size:8px;opacity:.6">탭하여 업로드 · Tap to upload</span>
              </div>`
         }
       </div>
       ${spot.blobUrl ? `
         <div class="cc-crop-row">
-          <span class="cc-crop-label">사진 위치</span>
+          <span class="cc-crop-label">사진 위치 · Crop</span>
           <input type="range" min="0" max="100" value="${spot.cropY}" oninput="ccUpdateCrop('${spot.id}',this.value)" style="flex:1;accent-color:#1A1A1A;cursor:pointer">
           <span class="cc-crop-label">Y</span>
         </div>` : ''}
       <div class="cc-spot-body">
         <div style="font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#999;margin-bottom:5px">Spot ${i+1}</div>
-        <input type="text" placeholder="가게 이름 (한글 또는 영어)" maxlength="40" class="cc-input" value="${ccEsc(spot.name)}" oninput="ccUpdateField('${spot.id}','name',this.value)">
-        <textarea placeholder="코멘트 (한글 또는 영어, 최대 80자)" maxlength="80" rows="2" class="cc-input" style="resize:none" oninput="ccUpdateField('${spot.id}','comment',this.value)">${ccEsc(spot.comment)}</textarea>
+        <input type="text" placeholder="Spot's Name · 가게 이름 (한글 또는 영어)" maxlength="40" class="cc-input" value="${ccEsc(spot.name)}" oninput="ccUpdateField('${spot.id}','name',this.value)">
+        <textarea placeholder="Comment · 코멘트 (한글 또는 영어, max 80)" maxlength="80" rows="2" class="cc-input" style="resize:none" oninput="ccUpdateField('${spot.id}','comment',this.value)">${ccEsc(spot.comment)}</textarea>
         <div class="cc-char-count" id="cc-cc-${spot.id}">${spot.comment.length}/80</div>
       </div>
       <div class="cc-spot-actions">
-        <button class="cc-spot-btn" onclick="ccMoveSpot('${spot.id}',-1)" ${i===0?'disabled':''}>↑</button>
-        <button class="cc-spot-btn" onclick="ccMoveSpot('${spot.id}',1)" ${i===ccSpots.length-1?'disabled':''}>↓</button>
-        ${ccSpots.length>1?`<button class="cc-spot-btn del" onclick="ccDeleteSpot('${spot.id}')">✕ 삭제</button>`:''}
+        <button class="cc-spot-btn" onclick="ccMoveSpot('${spot.id}',-1)" ${i===0?'disabled':''}>↑ Up</button>
+        <button class="cc-spot-btn" onclick="ccMoveSpot('${spot.id}',1)" ${i===ccSpots.length-1?'disabled':''}>↓ Down</button>
+        ${ccSpots.length>1?`<button class="cc-spot-btn del" onclick="ccDeleteSpot('${spot.id}')">✕ 삭제 · Delete</button>`:''}
       </div>
     </div>`).join('');
   const addBtn = document.getElementById('ccAddSpotBtn');
