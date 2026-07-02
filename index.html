@@ -508,7 +508,6 @@
         <button onclick="showScreen('s-register')" style="width:100%;padding:12px;background:#1A1A1A;color:#F6F3EF;border:none;border-radius:12px;font-family:'Work Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer">가이드 신청하기 · Apply as Guide</button>
       </div>
 
-      <input type="file" id="ccFileInput" accept="image/*" style="display:none" onchange="ccHandlePhotoUpload(this)">
     </div>
   </div>
 
@@ -1443,7 +1442,8 @@ function ccRenderSpots() {
   if (!list) return;
   list.innerHTML = ccSpots.map((spot, i) => `
     <div class="cc-spot-card" id="scard-${spot.id}">
-      <div class="cc-photo-frame" onclick="ccTriggerUpload('${spot.id}')">
+      <label class="cc-photo-frame" style="cursor:pointer">
+        <input type="file" accept="image/*" style="display:none;position:absolute" onchange="ccHandlePhotoUpload(this,'${spot.id}')">
         ${spot.blobUrl
           ? `<img src="${ccEsc(spot.blobUrl)}" style="object-position:center ${spot.cropY}%" data-spot-img="${spot.id}" alt="">
              <div style="position:absolute;bottom:7px;right:9px;background:rgba(0,0,0,.4);color:#fff;font-size:9px;font-weight:600;letter-spacing:.8px;padding:3px 7px;border-radius:6px;pointer-events:none">탭하여 변경</div>`
@@ -1453,7 +1453,7 @@ function ccRenderSpots() {
                <span style="font-size:8px;opacity:.6">탭하여 업로드 · Tap to upload</span>
              </div>`
         }
-      </div>
+      </label>
       ${spot.blobUrl ? `
         <div class="cc-crop-row">
           <span class="cc-crop-label">사진 위치 · Crop</span>
@@ -1476,15 +1476,9 @@ function ccRenderSpots() {
   if (addBtn) addBtn.style.display = ccSpots.length >= 10 ? 'none' : 'block';
 }
 
-function ccTriggerUpload(spotId) {
-  ccActiveSpotId = spotId;
-  const fi = document.getElementById('ccFileInput');
-  if (fi) { fi.value=''; fi.click(); }
-}
-
-function ccHandlePhotoUpload(input) {
+function ccHandlePhotoUpload(input, spotId) {
   if (!input.files?.[0]) return;
-  const spot = ccSpots.find(s => s.id === ccActiveSpotId);
+  const spot = ccSpots.find(s => s.id === spotId);
   if (!spot) return;
   if (spot.blobUrl) URL.revokeObjectURL(spot.blobUrl);
   spot.file = input.files[0];
